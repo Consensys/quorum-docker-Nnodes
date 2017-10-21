@@ -2,9 +2,11 @@
 
 Run a bunch of Quorum nodes, each in a separate Docker container.
 
+This is simply a learning exercise for configuring Quorum networks. Probably best not used in a production environment.
+
 In progress:
 
-  * Remove the need to have Geth/Bootnode/Constellation installed on the host for the set-up process: use the Docker image instead, which already contains them.
+  * ~~Remove the need to have Geth/Bootnode/Constellation installed on the host for the set-up process: use the Docker image instead, which already contains them.~~
   * Investigate adding Quorum network manager.
   * Further work on Docker image size.
   * Tidy the whole thing up.
@@ -127,7 +129,7 @@ So, Node 2 is able to see both contracts and the private transaction. Node 3 can
 
 ## Notes
 
-The RPC port for each container is mapped to *localhost* starting from port 22001. So, to see the peers connected to Node 2, you can do either of the following and get the same result:
+The RPC port for each container is mapped to *localhost* starting from port 22001. So, to see the peers connected to Node 2, you can do either of the following and get the same result. Change it in *setup.sh* if you don't like it.
 
     curl -X POST --data '{"jsonrpc":"2.0","method":"admin_peers","id":1}' 172.13.0.3:8545
     curl -X POST --data '{"jsonrpc":"2.0","method":"admin_peers","id":1}' localhost:22002

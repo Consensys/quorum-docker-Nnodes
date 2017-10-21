@@ -69,6 +69,3 @@ COPY --from=builder \
     /usr/local/bin/
 
 CMD ["/qdata/start-node.sh"]
-
-# Useful for debugging...
-#CMD ["/bin/bash"]

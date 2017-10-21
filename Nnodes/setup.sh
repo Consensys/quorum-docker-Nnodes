@@ -12,13 +12,10 @@
 # Run a console on Node N with "geth attach qdata_N/dd/geth.ipc"
 # (assumes Geth is installed on the host.)
 #
-# Dependency: Geth, Bootnode and Constellation currently need to be installed
-# on the host. TODO - fix this.
-#
 # Geth and Constellation logfiles for Node N will be in qdata_N/logs/
 #
 
-# TODO: check file access permissions
+# TODO: check file access permissions, especially for keys.
 
 
 #### Configuration options #############################################
@@ -27,6 +24,8 @@
 # hardcoded into the docker-compose file. Change it below if you like.
 ips=("172.13.0.2" "172.13.0.3" "172.13.0.4")
 
+# Docker image name
+image=quorum
 
 ########################################################################
 
@@ -38,6 +37,9 @@ fi
    
 ./cleanup.sh
 
+uid=`id -u`
+gid=`id -g`
+pwd=`pwd`
 
 #### Create directories for each node's configuration ##################
 
@@ -45,9 +47,10 @@ n=1
 for ip in ${ips[*]}
 do
     qd=qdata_$n
-    mkdir -p $qd/logs
-    mkdir -p $qd/dd/{keystore,geth}
-    mkdir $qd/keys
+    mkdir -p $qd/{logs,keys}
+    mkdir -p $qd/dd/geth
+    touch $qd/passwords.txt
+
     let n++
 done
 
@@ -59,10 +62,14 @@ n=1
 for ip in ${ips[*]}
 do
     qd=qdata_$n
-    # TODO generate this enode and key using the Docker container
-    enode=`/usr/local/bin/bootnode -genkey $qd/dd/nodekey -writeaddress`
+
+    # Generate the node's Enode and key
+    enode=`docker run -v $pwd/$qd:/qdata $image sudo -u \#$uid -g \#$gid /usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress`
+
+    # Add the enode to static-nodes.json
     sep=`[[ $ip != ${ips[-1]} ]] && echo ","`
     echo '  "enode://'$enode'@'$ip':30303?discport=0"'$sep >> static-nodes.json
+
     let n++
 done
 echo "]" >> static-nodes.json
@@ -75,18 +82,15 @@ cat > genesis.json <<EOF
   "alloc": {
 EOF
 
-touch password.txt
 n=1
 for ip in ${ips[*]}
 do
     qd=qdata_$n
-    # Generate account and save key
-    # TODO generate the account using the Docker container
-    account=`/usr/local/bin/geth --datadir=. --password ./password.txt account new | cut -c 11-50`
-    # Ether account key for accounts in the Genesis block
-    mv keystore/UTC*${account} $qd/dd/keystore
 
-    # Add to genesis block
+    # Generate an Ether account for the node
+    account=`docker run -v $pwd/$qd:/qdata $image sudo -u \#$uid -g \#$gid /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new | cut -c 11-50`
+
+    # Add the account to the genesis block so it has some Ether at start-up
     sep=`[[ $ip != ${ips[-1]} ]] && echo ","`
     cat >> genesis.json <<EOF
     "${account}": {
@@ -96,8 +100,6 @@ EOF
 
     let n++
 done
-rm -rf keystore
-rm -f password.txt
 
 cat >> genesis.json <<EOF
   },
@@ -143,20 +145,17 @@ do
     cp genesis.json $qd/genesis.json
     cp static-nodes.json $qd/dd/static-nodes.json
 
-    # Quorum-related keys (used by Constellation)
-    # TODO - generate these using the docker container
-    /usr/local/bin/constellation-enclave-keygen $qd/keys/tm $qd/keys/tma < /dev/null > /dev/null
+    # Generate Quorum-related keys (used by Constellation)
+    docker run -v $pwd/$qd:/qdata $image sudo -u \#$uid -g \#$gid /usr/local/bin/constellation-enclave-keygen /qdata/keys/tm /qdata/keys/tma < /dev/null > /dev/null
     echo 'Node '$n' public key: '`cat $qd/keys/tm.pub`
 
     # Embed the user's host machine permissions in the start script
     # So that the nodes run under the right UID/GID
     cat templates/start-node.sh \
-        | sed s/_UID_/`id -u`/g \
-        | sed s/_GID_/`id -g`/g \
+        | sed s/_UID_/$uid/g \
+        | sed s/_GID_/$gid/g \
         > $qd/start-node.sh
     chmod 755 $qd/start-node.sh
-
-    touch $qd/passwords.txt
 
     let n++
 done
@@ -164,6 +163,7 @@ rm -rf genesis.json static-nodes.json
 
 
 #### Create the docker-compose file ####################################
+
 cat > docker-compose.yml <<EOF
 version: '2'
 services:
@@ -176,7 +176,7 @@ do
 
     cat >> docker-compose.yml <<EOF
   node_$n:
-    image: quorum
+    image: $image
     volumes:
       - './$qd:/qdata'
     networks:
