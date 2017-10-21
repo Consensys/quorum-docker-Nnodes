@@ -11,6 +11,8 @@ In progress:
   * Further work on Docker image size.
   * Tidy the whole thing up.
 
+See the *README* in the *Nnodes* directory for details of the set up process.
+
 ## Building
 
 In the top level directory:

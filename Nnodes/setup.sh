@@ -20,8 +20,8 @@
 
 #### Configuration options #############################################
 
-# These (currently) need to be in the subnet 172.13.0.0/16 since it is
-# hardcoded into the docker-compose file. Change it below if you like.
+# One Docker container will be configured for each IP address in $ips
+subnet="172.13.0.0/16"
 ips=("172.13.0.2" "172.13.0.3" "172.13.0.4")
 
 # Docker image name
@@ -43,19 +43,22 @@ pwd=`pwd`
 
 #### Create directories for each node's configuration ##################
 
+echo '[1] Configuring for '${#ips[@]}' nodes.'
+
 n=1
 for ip in ${ips[*]}
 do
     qd=qdata_$n
     mkdir -p $qd/{logs,keys}
     mkdir -p $qd/dd/geth
-    touch $qd/passwords.txt
 
     let n++
 done
 
 
 #### Make static-nodes.json and store keys #############################
+
+echo '[2] Creating Enodes and static-nodes.json.'
 
 echo "[" > static-nodes.json
 n=1
@@ -77,6 +80,8 @@ echo "]" >> static-nodes.json
 
 #### Create accounts, keys and genesis.json file #######################
 
+echo '[3] Creating Ether accounts and genesis.json.'
+
 cat > genesis.json <<EOF
 {
   "alloc": {
@@ -88,6 +93,7 @@ do
     qd=qdata_$n
 
     # Generate an Ether account for the node
+    touch $qd/passwords.txt
     account=`docker run -v $pwd/$qd:/qdata $image sudo -u \#$uid -g \#$gid /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new | cut -c 11-50`
 
     # Add the account to the genesis block so it has some Ether at start-up
@@ -131,6 +137,8 @@ done
 
 
 #### Complete each node's configuration ################################
+
+echo '[4] Creating Quorum keys and finishing configuration.'
 
 n=1
 for ip in ${ips[*]}
@@ -197,7 +205,7 @@ networks:
     ipam:
       driver: default
       config:
-      - subnet: 172.13.0.0/16
+      - subnet: $subnet
 EOF
 
 
