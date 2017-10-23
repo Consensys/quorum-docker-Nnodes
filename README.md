@@ -21,7 +21,7 @@ In the top level directory:
     
 The first time will take a while, but after some caching it gets much quicker for any minor updates.
 
-I've got the size of the final image down to 391MB from over 890MB. It's likely possible to improve much further on that.
+I've got the size of the final image down to ~~391MB~~ 308MB from over 890MB. It's likely possible to improve much further on that.  Alpine Linux is a candidate minimal base image, but there are challenges with the Haskell dependencies; there's an [example here](https://github.com/jpmorganchase/constellation/blob/master/build-linux-static.dockerfile).
 
 ## Running
 

@@ -46,16 +46,16 @@ FROM ubuntu:16.04
 
 # Install add-apt-repository
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
+    apt-get install -y --no-install-recommends software-properties-common && \
     add-apt-repository ppa:ethereum/ethereum && \
     apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         libdb-dev \
         libsodium-dev \
         libtinfo-dev \
         solc \
-        sudo \
-        sysvbanner  # Needed?
+        sudo && \
+    rm -rf /var/lib/apt/lists/*
 
 # Temporary useful tools
 #RUN apt-get update && \
