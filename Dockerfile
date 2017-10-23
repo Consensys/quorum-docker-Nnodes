@@ -53,8 +53,7 @@ RUN apt-get update && \
         libdb-dev \
         libsodium-dev \
         libtinfo-dev \
-        solc \
-        sudo && \
+        solc && \
     rm -rf /var/lib/apt/lists/*
 
 # Temporary useful tools

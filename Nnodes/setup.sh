@@ -67,7 +67,7 @@ do
     qd=qdata_$n
 
     # Generate the node's Enode and key
-    enode=`docker run -v $pwd/$qd:/qdata $image sudo -u \#$uid -g \#$gid /usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress`
+    enode=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress`
 
     # Add the enode to static-nodes.json
     sep=`[[ $ip != ${ips[-1]} ]] && echo ","`
@@ -94,7 +94,7 @@ do
 
     # Generate an Ether account for the node
     touch $qd/passwords.txt
-    account=`docker run -v $pwd/$qd:/qdata $image sudo -u \#$uid -g \#$gid /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new | cut -c 11-50`
+    account=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new | cut -c 11-50`
 
     # Add the account to the genesis block so it has some Ether at start-up
     sep=`[[ $ip != ${ips[-1]} ]] && echo ","`
@@ -154,15 +154,10 @@ do
     cp static-nodes.json $qd/dd/static-nodes.json
 
     # Generate Quorum-related keys (used by Constellation)
-    docker run -v $pwd/$qd:/qdata $image sudo -u \#$uid -g \#$gid /usr/local/bin/constellation-enclave-keygen /qdata/keys/tm /qdata/keys/tma < /dev/null > /dev/null
+    docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-enclave-keygen /qdata/keys/tm /qdata/keys/tma < /dev/null > /dev/null
     echo 'Node '$n' public key: '`cat $qd/keys/tm.pub`
 
-    # Embed the user's host machine permissions in the start script
-    # So that the nodes run under the right UID/GID
-    cat templates/start-node.sh \
-        | sed s/_UID_/$uid/g \
-        | sed s/_GID_/$gid/g \
-        > $qd/start-node.sh
+    cp templates/start-node.sh $qd/start-node.sh
     chmod 755 $qd/start-node.sh
 
     let n++
@@ -192,6 +187,7 @@ do
         ipv4_address: '$ip'
     ports:
       - $((n+22000)):8545
+    user: '$uid:$gid'
 EOF
 
     let n++

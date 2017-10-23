@@ -109,7 +109,7 @@ We use Geth's *bootnode* utility to generate the Enode and the private key. By j
         qd=qdata_$n
 
         # Generate the node's Enode and key
-        enode=`docker run -v $pwd/$qd:/qdata $image sudo -u \#$uid -g \#$gid /usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress`
+        enode=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress`
 
         # Add the enode to static-nodes.json
         sep=`[[ $ip != ${ips[-1]} ]] && echo ","`
@@ -139,7 +139,7 @@ The Geth executable in the Docker image is used to create the accounts. An empty
 
         # Generate an Ether account for the node
         touch $qd/passwords.txt
-        account=`docker run -v $pwd/$qd:/qdata $image sudo -u \#$uid -g \#$gid /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new | cut -c 11-50`
+        account=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new | cut -c 11-50`
 
         # Add the account to the genesis block so it has some Ether at start-up
         sep=`[[ $ip != ${ips[-1]} ]] && echo ","`
@@ -209,17 +209,10 @@ We copy into each node's directory the *genesis.json* and *static-nodes.json* fi
 Quorum's Constellation needs public/private keypairs to operate. The *tm.pub* key is the address to which "privateFor" transactions should be sent for a node. Quorum provides a utility for generating these keys, and again we use the instance in the Docker image. I believe the *tma.{pub,key}* files are being deprecated, but they are still needed for the time-being.
 
         # Generate Quorum-related keys (used by Constellation)
-        docker run -v $pwd/$qd:/qdata $image sudo -u \#$uid -g \#$gid /usr/local/bin/constellation-enclave-keygen /qdata/keys/tm /qdata/keys/tma < /dev/null > /dev/null
+        docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-enclave-keygen /qdata/keys/tm /qdata/keys/tma < /dev/null > /dev/null
         echo 'Node '$n' public key: '`cat $qd/keys/tm.pub`
 
-So that log files etc. are written with the right user credentials into the shared Docker volume, we need the processes in the container to run under our user-id.  The *start-node.sh* script is responsible for starting Constellation and Geth within each container, so we write our UID and GID into here.
-
-        # Embed the user's host machine permissions in the start script
-        # So that the nodes run under the right UID/GID
-        cat templates/start-node.sh \
-            | sed s/_UID_/$uid/g \
-            | sed s/_GID_/$gid/g \
-            > $qd/start-node.sh
+        cp templates/start-node.sh $qd/start-node.sh
         chmod 755 $qd/start-node.sh
 
         let n++
@@ -252,6 +245,7 @@ This is the first file that is not written to the node-specific directories. Thi
             ipv4_address: '$ip'
         ports:
           - $((n+22000)):8545
+        user: '$uid:$gid'
     EOF
 
         let n++
