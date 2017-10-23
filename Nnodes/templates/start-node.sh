@@ -36,7 +36,7 @@ fi
 echo "[*] Starting Constellation node"
 nohup /usr/local/bin/constellation-node $TMCONF 2>> /qdata/logs/constellation.log &
 
-sleep 1
+sleep 2
 
 echo "[*] Starting node"
 PRIVATE_CONFIG=$TMCONF nohup /usr/local/bin/geth $GETH_ARGS 2>>/qdata/logs/geth.log
