@@ -70,8 +70,6 @@ The final goal at the end of set-up is for each node to have its own directory t
     │   ├── nodekey
     │   └── static-nodes.json
     ├── keys/
-    │   ├── tma.key
-    │   ├── tma.pub
     │   ├── tm.key
     │   └── tm.pub
     ├── logs/
@@ -206,10 +204,10 @@ We copy into each node's directory the *genesis.json* and *static-nodes.json* fi
         cp genesis.json $qd/genesis.json
         cp static-nodes.json $qd/dd/static-nodes.json
 
-Quorum's Constellation needs public/private keypairs to operate. The *tm.pub* key is the address to which "privateFor" transactions should be sent for a node. Quorum provides a utility for generating these keys, and again we use the instance in the Docker image. I believe the *tma.{pub,key}* files are being deprecated, but they are still needed for the time-being.
+Quorum's Constellation needs public/private keypairs to operate. The *tm.pub* key is the address to which "privateFor" transactions should be sent for a node. Quorum provides a utility for generating these keys, and again we use the instance in the Docker image.
 
         # Generate Quorum-related keys (used by Constellation)
-        docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-enclave-keygen /qdata/keys/tm /qdata/keys/tma < /dev/null > /dev/null
+        docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=/qdata/keys/tm < /dev/null > /dev/null
         echo 'Node '$n' public key: '`cat $qd/keys/tm.pub`
 
         cp templates/start-node.sh $qd/start-node.sh

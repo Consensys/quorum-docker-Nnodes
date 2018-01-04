@@ -36,7 +36,7 @@ then
     echo "ERROR: There must be more than one node IP address."
     exit 1
 fi
-   
+
 ./cleanup.sh
 
 uid=`id -u`
@@ -69,11 +69,11 @@ do
     qd=qdata_$n
 
     # Generate the node's Enode and key
-    enode=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress`
-
+    docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/bootnode -genkey /qdata/dd/nodekey
+    enode=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/bootnode --nodekey /qdata/dd/nodekey -writeaddress`
     # Add the enode to static-nodes.json
     sep=`[[ $n < $nnodes ]] && echo ","`
-    echo '  "enode://'$enode'@'$ip':30303?discport=0"'$sep >> static-nodes.json
+    echo '  "enode://'$enode'@'$ip':30303?discport=0&raftport=50400"'$sep >> static-nodes.json
 
     let n++
 done
@@ -156,7 +156,7 @@ do
     cp static-nodes.json $qd/dd/static-nodes.json
 
     # Generate Quorum-related keys (used by Constellation)
-    docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-enclave-keygen /qdata/keys/tm /qdata/keys/tma < /dev/null > /dev/null
+    docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=qdata/keys/tm < /dev/null > /dev/null
     echo 'Node '$n' public key: '`cat $qd/keys/tm.pub`
 
     cp templates/start-node.sh $qd/start-node.sh
@@ -206,13 +206,81 @@ networks:
       - subnet: $subnet
 EOF
 
-
 #### Create pre-populated contracts ####################################
-
+echo '[5] Compiling example contracts'
 # Private contract - insert Node 2 as the recipient
-cat templates/contract_pri.js \
-    | sed s:_NODEKEY_:`cat qdata_2/keys/tm.pub`:g \
-          > contract_pri.js
+cp templates/contract_pri.sol ./
+docker run -u $uid:$gid --rm -v $pwd/:/data/ $image solc -o /data/contract_pri --bin --abi /data/contract_pri.sol < /dev/null > /dev/null
+abi=$(<$pwd/contract_pri/simplestorage.abi)
+binary=$(<$pwd/contract_pri/simplestorage.bin)
+nodekey=$(<qdata_2/keys/tm.pub)
+rm -rf contract_pri/ contract_pri.sol
+cat > contract_pri.js <<EOF
+//
+// Create a contract private with the nodes with addresses in toKey
+//
+
+var toKeys=["$nodekey"];
+
+a = eth.accounts[0]
+web3.eth.defaultAccount = a;
+
+
+var SimpleContract = eth.contract($abi);
+
+var contract = SimpleContract.new(42, {
+        from: web3.eth.accounts[0],
+        data:'0x$binary',
+        gas: 1000000
+    },
+function(e, contract) {
+	if (e) {
+		console.log("err creating contract", e);
+	} else {
+		if (!contract.address) {
+			console.log("Contract transaction send: TransactionHash: " + contract.transactionHash + " waiting to be mined...");
+		} else {
+			console.log("Contract mined! Address: " + contract.address);
+			console.log(contract);
+		}
+	}
+});
+EOF
+
 
 # Public contract - no change required
-cp templates/contract_pub.js ./
+cp templates/contract_pub.sol ./
+docker run -u $uid:$gid --rm -v $pwd/:/data/ $image solc -o /data/contract_pub --bin --abi /data/contract_pub.sol < /dev/null > /dev/null
+abi=$(<$pwd/contract_pub/simplestorage.abi)
+binary=$(<$pwd/contract_pub/simplestorage.bin)
+rm -rf contract_pub/ contract_pub.sol
+cat > contract_pub.js <<EOF
+//
+// Create a public contract
+//
+a = eth.accounts[0]
+web3.eth.defaultAccount = a;
+
+var SimpleContract = eth.contract($abi);
+
+var contract = SimpleContract.new(42, {
+        from: web3.eth.accounts[0],
+        data:'0x$binary',
+        gas: 1000000
+    },
+function(e, contract) {
+	if (e) {
+		console.log("err creating contract", e);
+	} else {
+		if (!contract.address) {
+			console.log("Contract transaction send: TransactionHash: " + contract.transactionHash + " waiting to be mined...");
+		} else {
+			console.log("Contract mined! Address: " + contract.address);
+			console.log(contract);
+		}
+	}
+});
+EOF
+
+
+

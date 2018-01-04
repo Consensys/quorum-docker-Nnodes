@@ -71,19 +71,13 @@ We will demo the following, from Node 1's console.
 This is based on using the provided example *setup.sh* file as-is (three nodes).
 
 #### Node 1 geth console
-
-    > var abi = [{"constant":true,"inputs":[],"name":"storedData","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"x","type":"uint256"}],"name":"set","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"retVal","type":"uint256"}],"payable":false,"type":"function"},{"inputs":[{"name":"initVal","type":"uint256"}],"type":"constructor"}];
-    undefined
-
     > loadScript("contract_pub.js")
     Contract transaction send: TransactionHash: 0x0e7ff9b609c0ba3a11de9cd4f51389c29dceacbac2f91e294346df86792d8d8f waiting to be mined...
     true
     Contract mined! Address: 0x1932c48b2bf8102ba33b4a6b545c32236e342f34
     [object Object]
 
-    > var public = eth.contract(abi).at("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
-    undefined
-    > public.get()
+    > contract.get()
     42
 
     > loadScript("contract_pri.js")
@@ -92,13 +86,11 @@ This is based on using the provided example *setup.sh* file as-is (three nodes).
     Contract mined! Address: 0x1349f3e1b8d71effb47b840594ff27da7e603d17
     [object Object]
 
-    > var private = eth.contract(abi).at("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
-    undefined
-    > private.get()
+    > contract.get()
     42
-    > private.set(65535, {privateFor: ["QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc="]})
+    > contract.set(65535, {privateFor: ["QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc="]})
     "0x0dc9c0b85b4c4e5f1e3ba2014b5f628f5153bc2588741a69626eb5a40d2b30d6"
-    > private.get()
+    > contract.get()
     65535
 
 #### Node 2 geth console
