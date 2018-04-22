@@ -1,5 +1,10 @@
 # quorum-docker-Nnodes
 
+
+Support Quorum 2.0.2 by lucassaldanha's patch.
+[Original Pull Request ConsenSys/quorum-docker-Nnodes](https://github.com/ConsenSys/quorum-docker-Nnodes/pull/5)
+
+
 Run a bunch of Quorum nodes, each in a separate Docker container.
 
 This is simply a learning exercise for configuring Quorum networks. Probably best not used in a production environment.
