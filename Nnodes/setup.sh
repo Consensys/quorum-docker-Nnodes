@@ -17,12 +17,19 @@
 
 # TODO: check file access permissions, especially for keys.
 
+#### Cleanup ###########################################################
+
+if [ -f "docker-compose.yml" ]
+then
+        docker-compose down
+	./cleanup.sh
+fi
 
 #### Configuration options #############################################
 
 # One Docker container will be configured for each IP address in $ips
 subnet="172.13.0.0/16"
-ips=("172.13.0.2" "172.13.0.3" "172.13.0.4")
+ips=("172.13.0.2" "172.13.0.3" "172.13.0.4" "172.13.0.5")
 
 # Docker image name
 image=quorum
@@ -97,7 +104,7 @@ do
 
     # Generate an Ether account for the node
     touch $qd/passwords.txt
-    account=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new | cut -c 11-50`
+    account=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new 2>/dev/null | cut -c 11-50`
 
     # Add the account to the genesis block so it has some Ether at start-up
     sep=`[[ $n < $nnodes ]] && echo ","`
@@ -218,3 +225,7 @@ cat templates/contract_pri.js \
 
 # Public contract - no change required
 cp templates/contract_pub.js ./
+
+# Start Cluster
+docker-compose up -d
+

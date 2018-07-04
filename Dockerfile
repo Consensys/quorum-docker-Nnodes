@@ -34,6 +34,8 @@ RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
 
 RUN git clone https://github.com/jpmorganchase/quorum.git && \
     cd quorum && \
+    wget https://github.com/jpmorganchase/quorum/commit/bcf82ca2b9ac4bf78ede873a6230ece497e10052.patch -O fix_428.patch && \
+    patch -p1 < fix_428.patch && \
     git checkout tags/v$QUORUM_VERSION && \
     make all && \
     cp build/bin/geth /usr/local/bin && \
