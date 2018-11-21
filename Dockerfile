@@ -1,7 +1,7 @@
 FROM ubuntu:16.04 as builder
 
-ARG CONSTELLATION_VERSION=0.3.2
-ARG QUORUM_VERSION=2.0.2
+ARG CONSTELLATION_VERSION=0.3.5
+ARG QUORUM_VERSION=2.1.1
 
 WORKDIR /work
 
@@ -19,12 +19,12 @@ RUN apt-get update && \
             zlib1g-dev
 
 RUN wget -q https://github.com/jpmorganchase/constellation/releases/download/v$CONSTELLATION_VERSION/constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.xz && \
-    tar -xvf constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.xz && \
-    cp constellation-$CONSTELLATION_VERSION-ubuntu1604/constellation-node /usr/local/bin && \
+    tar -xvf constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.gz && \
+    cp constellation-node /usr/local/bin && \
     chmod 0755 /usr/local/bin/constellation-node && \
-    rm -rf constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.xz constellation-$CONSTELLATION_VERSION-ubuntu1604
+    rm -rf constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.gz constellation-node
 
-ENV GOREL go1.7.3.linux-amd64.tar.gz
+ENV GOREL go1.11.1.linux-amd64.tar.gz
 ENV PATH $PATH:/usr/local/go/bin
 
 RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
@@ -34,8 +34,6 @@ RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
 
 RUN git clone https://github.com/jpmorganchase/quorum.git && \
     cd quorum && \
-    wget https://github.com/jpmorganchase/quorum/commit/bcf82ca2b9ac4bf78ede873a6230ece497e10052.patch -O fix_428.patch && \
-    patch -p1 < fix_428.patch && \
     git checkout tags/v$QUORUM_VERSION && \
     make all && \
     cp build/bin/geth /usr/local/bin && \
