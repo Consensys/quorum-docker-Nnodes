@@ -18,7 +18,7 @@ RUN apt-get update && \
             wrk \
             zlib1g-dev
 
-RUN wget -q https://github.com/jpmorganchase/constellation/releases/download/v$CONSTELLATION_VERSION/constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.xz && \
+RUN wget -q https://github.com/jpmorganchase/constellation/releases/download/v0.3.5-build.1/constellation-0.3.5-ubuntu1604.tar.gz && \
     tar -xvf constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.gz && \
     cp constellation-node /usr/local/bin && \
     chmod 0755 /usr/local/bin/constellation-node && \
