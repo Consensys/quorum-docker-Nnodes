@@ -24,7 +24,7 @@ RUN wget -q https://github.com/jpmorganchase/constellation/releases/download/v0.
     chmod 0755 /usr/local/bin/constellation-node && \
     rm -rf constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.gz constellation-node
 
-ENV GOREL go1.11.1.linux-amd64.tar.gz
+ENV GOREL go1.10.7.linux-amd64.tar.gz
 ENV PATH $PATH:/usr/local/go/bin
 
 RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
@@ -32,9 +32,10 @@ RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
     mv go /usr/local/go && \
     rm -f $GOREL
 
+
 RUN git clone https://github.com/jpmorganchase/quorum.git && \
     cd quorum && \
-    git checkout tags/v$QUORUM_VERSION && \
+    git checkout v$QUORUM_VERSION && \
     make all && \
     cp build/bin/geth /usr/local/bin && \
     cp build/bin/bootnode /usr/local/bin && \

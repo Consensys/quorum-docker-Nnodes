@@ -29,10 +29,10 @@ fi
 
 # One Docker container will be configured for each IP address in $ips
 subnet="172.13.0.0/16"
-ips=("172.13.0.2" "172.13.0.3" "172.13.0.4" "172.13.0.5")
+ips=("172.13.0.2" "172.13.0.3" "172.13.0.4")
 
 # Docker image name
-image=quorum
+image=quorum:2.2.0
 
 ########################################################################
 
@@ -121,7 +121,13 @@ cat >> genesis.json <<EOF
   },
   "coinbase": "0x0000000000000000000000000000000000000000",
   "config": {
-    "homesteadBlock": 0
+      "byzantiumBlock": 1,
+      "chainId": 1337,
+      "eip150Block": 1,
+      "eip155Block": 0,
+      "eip150Hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "eip158Block": 1,
+      "isQuorum":true
   },
   "difficulty": "0x0",
   "extraData": "0x",
