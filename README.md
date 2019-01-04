@@ -1,6 +1,6 @@
 # quorum-docker-Nnodes
 
-
+Add support for Quorum 2.2.0 and Clique consensus engine.
 
 Run a bunch of Quorum nodes, each in a separate Docker container.
 
@@ -8,7 +8,6 @@ This is simply a learning exercise for configuring Quorum networks. Probably bes
 
 In progress:
 
-  * ~~Remove the need to have Geth/Bootnode/Constellation installed on the host for the set-up process: use the Docker image instead, which already contains them.~~
   * Investigate adding Quorum network manager.
   * Further work on Docker image size.
   * Tidy the whole thing up.
@@ -30,11 +29,12 @@ I've got the size of the final image down to ~~391MB~~ 308MB from over 890MB. It
 Change to the *Nnodes/* directory. Edit the `ips` variable in *setup.sh* to list two or more IP addresses on the Docker network that will host nodes:
 
     ips=("172.13.0.2" "172.13.0.3" "172.13.0.4")
+    signer_ips=("172.13.0.4")    #For Clique signer
 
 The IP addresses are needed for Constellation to work. Now run,
 
     ./setup.sh
-    docker-compose up -d
+    ./setup.sh clique    #For Clique
     
 This will set up as many Quorum nodes as IP addresses you supplied, each in a separate container, on a Docker network, all hopefully talking to each other.
 
