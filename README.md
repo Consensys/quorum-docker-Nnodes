@@ -1,6 +1,8 @@
 # quorum-docker-Nnodes
 
-Add support for Quorum 2.2.0 and Clique consensus engine.
+## Modify by me
+  * Add support for Quorum 2.2.0.
+  * Add support for Clique consensus engine
 
 Run a bunch of Quorum nodes, each in a separate Docker container.
 
