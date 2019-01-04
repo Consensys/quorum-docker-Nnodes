@@ -58,7 +58,12 @@ RUN apt-get update && \
         zlib1g-dev\
         libtinfo-dev \
         solc && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir /.ethereum && \
+    chown -R 1000:1000 /.ethereum && \
+    groupadd -g 1000 geth && useradd -u 1000 -g 1000 geth && \
+    mkdir /home/geth && chown 1000:1000 -R /home/geth
+    
 
 # Temporary useful tools
 #RUN apt-get update && \
@@ -68,6 +73,6 @@ COPY --from=builder \
         /usr/local/bin/constellation-node \
         /usr/local/bin/geth \
         /usr/local/bin/bootnode \
-    /usr/local/bin/
+        /usr/local/bin/
 
 CMD ["/qdata/start-node.sh"]
