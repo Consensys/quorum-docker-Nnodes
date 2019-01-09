@@ -33,13 +33,17 @@ I've got the size of the final image down to ~~391MB~~ 308MB from over 890MB. It
 
 Change to the *Nnodes/* directory. Edit the `ips` variable in *setup.sh* to list two or more IP addresses on the Docker network that will host nodes:
 
-    ips=("172.13.0.2" "172.13.0.3" "172.13.0.4")
-    signer_ips=("172.13.0.4")    #For Clique signer
+    # Total nodes to deploy
+    total_nodes=5
 
+    # Signer nodes for Clique and IBFT
+    signer_nodes=7
+    
 The IP addresses are needed for Constellation to work. Now run,
 
-    ./setup.sh
-    ./setup.sh clique    #For Clique
+    ./setup.sh [raft]
+    ./setup.sh clique    # For Clique
+    ./setup.sh istanbul  # For IBFT
     
 This will set up as many Quorum nodes as IP addresses you supplied, each in a separate container, on a Docker network, all hopefully talking to each other.
 
