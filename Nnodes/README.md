@@ -16,22 +16,21 @@ This is what we set up for each node.
 In addition we create some utility scripts on the host.
 
   * A *docker-compose.yml* file that can be used with docker-compose to create the network of containers.
-  * Two sample contract creation scripts:
-    * *contract_pub.js* - creates a public contract, visible to all.
-    * *contract_pri.js* - creates a private contract between the sender and Node 2.
 
 
 Refer to the *setup.sh* file itself for the full code.
 
 ## Configuration options
 
-Options are simple and self-explanatory. The *docker-compose.yml* file will create a Docker network for the nodes as per the `subnet` variable here. If you want to run more nodes, then add addresses for them to the `ips` list.
+Options are simple and self-explanatory. The *docker-compose.yml* file will create a Docker network for the nodes as per the `subnet` variable here. If you want to run more nodes, change `total_nodes` to how many you want.
 
     #### Configuration options #############################################
 
-    # One Docker container will be configured for each IP address in $ips
-    subnet="172.13.0.0/16"
-    ips=("172.13.0.2" "172.13.0.3" "172.13.0.4")
+    # Total nodes to deploy
+    total_nodes=5
+
+    # Signer nodes for Clique and IBFT
+    signer_nodes=7
 
     # Docker image name
     image=quorum
@@ -39,14 +38,6 @@ Options are simple and self-explanatory. The *docker-compose.yml* file will crea
 The docker image is used during set-up to run Geth, Bootnode and Constellation to generate various things. These executables don't need to be installed on the host machine.
 
 ## House-keeping
-
-The sample private transaction we will create later is designed to be sent from Node 1 to Node 2, so we demand that there be at least two nodes configured.
-
-    if [[ ${#ips[@]} < 2 ]]
-    then
-        echo "ERROR: There must be more than one node IP address."
-    exit 1
-    fi
 
 Delete any old configuration.
 
@@ -262,16 +253,3 @@ This is the first file that is not written to the node-specific directories. Thi
           - subnet: $subnet
     EOF
 
-## Create pre-populated contracts
-
-For convenience, we provide a couple of scripts that create contracts, one public, one private. The private contract needs to know Node 2's key since that is the node we will share the contract with, so we copy in the key we generated earlier. Templates for the contracts are in the *templates/* directory.
-
-    #### Create pre-populated contracts ####################################
-
-    # Private contract - insert Node 2 as the recipient
-    cat templates/contract_pri.js \
-        | sed s:_NODEKEY_:`cat qdata_2/keys/tm.pub`:g \
-              > contract_pri.js
-
-    # Public contract - no change required
-    cp templates/contract_pub.js ./
