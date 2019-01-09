@@ -3,6 +3,7 @@
 ## Modified by me
   * Add support for Quorum 2.2.0.
   * Add support for Clique consensus engine
+  * Add support for Istanbul BFT consensus engine
 
 ## Intro
 
