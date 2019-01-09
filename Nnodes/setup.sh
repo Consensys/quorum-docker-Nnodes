@@ -30,23 +30,33 @@ COLOR_WHITE='\e[1;37m';
 
 # One Docker container will be configured for each IP address in $ips
 
-rpc_start_port=23000
-node_start_port=26000
-raft_start_port=29000
+# Port prefix
+rpc_start_port=22000
+node_start_port=25000
+raft_start_port=28000
 
-subnet="172.14.0.0/16"
+# VIP Subnet
+subnet="172.13.0.0/16"
 
+# Total nodes to deploy
 total_nodes=5
+
+# Signer nodes for Clique and IBFT
 signer_nodes=7
 
+# Consensus engine ex. raft, clique, istanbul
 consensus=raft
 
+# Block period for Clique and IBFT
 block_period=1
 
 # Docker image name
 image=quorum
+
+# Service name for docker-compose.yml
 service=n1
 
+# Send some ether for pre-defined accounts
 alloc_ether=true
 
 ########################################################################
@@ -95,7 +105,7 @@ pwd=`pwd`
 
 #### Create directories for each node's configuration ##################
 
-#Force cleanup on next setup
+# Force cleanup on next setup
 touch docker-compose.yml
 
 i=0
@@ -142,7 +152,7 @@ do
     # Generate the node's Enode and key
     nkey=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress; cat /qdata/dd/nodekey"`
 
-    #IBFT use nodekey to authorize nodes.
+    # IBFT use nodekey to authorize nodes.
     if [ "$consensus" = "istanbul" ]; then
         nodekeys="${nodekeys}${nkey}${sep}"
     fi
@@ -162,7 +172,7 @@ echo "]" >> static-nodes.json
 
 echo -e "${COLOR_WHITE}[3] Creating Ether accounts and genesis.json.${COLOR_RESET}"
 
-#extraData parameter for IBFT
+# extraData parameter for IBFT
 istanbul_extra=""
 
 cat > genesis.json <<EOF
@@ -170,7 +180,7 @@ cat > genesis.json <<EOF
   "alloc": {
 EOF
 
-#Create extraData from nodekeys
+# Create extraData from nodekeys
 if [ "$consensus" = "istanbul" ]; then
     genesis=`docker run $image sh -c "istanbul reinit --nodekey ${nodekeys} --quorum"`
     istanbul_extra=`echo $genesis | grep -Po '"extraData": "0x[0-9a-f]+",' | cut -d \" -f 4`
@@ -264,7 +274,7 @@ elif [ "${consensus}" = "istanbul" ]; then
   "mixHash": "0x63746963616c2062797a616e74696e65206661756c7420746f6c6572616e6365"
 }
 EOF
-else #Raft
+else # Raft
     cat >> genesis.json <<EOF
   },
   "extraData": "0x",
@@ -378,7 +388,7 @@ EOF
 
 # Start Cluster
 echo -e "${COLOR_WHITE}[5] Starting Quorum cluster.${COLOR_RESET}"
-#docker-compose up -d 2>/dev/null
+docker-compose up -d 2>/dev/null
 
 echo -e "${COLOR_WHITE}[-] Finished.${COLOR_RESET}"
 
