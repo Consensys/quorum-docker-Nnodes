@@ -32,6 +32,10 @@ RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
     mv go /usr/local/go && \
     rm -f $GOREL
 
+RUN mkdir istanbul && cd istanbul && \
+    GOPATH=/work/istanbul go get github.com/jpmorganchase/istanbul-tools/cmd/istanbul && \
+    cp bin/istanbul /usr/local/bin && \
+    cd .. && rm -rf istanbul
 
 RUN git clone https://github.com/jpmorganchase/quorum.git && \
     cd quorum && \
@@ -71,6 +75,7 @@ RUN apt-get update && \
 
 COPY --from=builder \
         /usr/local/bin/constellation-node \
+        /usr/local/bin/istanbul \
         /usr/local/bin/geth \
         /usr/local/bin/bootnode \
         /usr/local/bin/
