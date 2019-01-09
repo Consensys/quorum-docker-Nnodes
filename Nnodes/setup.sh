@@ -109,13 +109,15 @@ pwd=`pwd`
 touch docker-compose.yml
 
 i=0
+n=0
 
-#Fill IP list
+# Fill IP list
 for i in $(seq 2 $((total_nodes+1))); do
     ips+=("$ip_prefix$i") 
     if [[ ! "${consensus}" = "raft" && "$n" -ge "$((total_nodes-signer_nodes))" ]]; then
         signer_ips+=("$ip_prefix$i")
     fi
+    let n++
 done
 
 printf "${COLOR_WHITE}[1] Configuring for ${COLOR_RED}'$total_nodes'${COLOR_WHITE} nodes"
