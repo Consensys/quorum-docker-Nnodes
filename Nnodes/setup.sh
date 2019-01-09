@@ -249,11 +249,11 @@ cat >> genesis.json <<EOF
     "eip155Block": 1,
     "eip158Block": 1,
     "byzantiumBlock": 1,
-    "isQuorum": true,
 EOF
 
 if [ "${consensus}" = "clique" ]; then
     cat >> genesis.json <<EOF
+    "isQuorum": true,
     "clique": {
       "period": ${block_period},
       "epoch": 30000
@@ -265,6 +265,7 @@ if [ "${consensus}" = "clique" ]; then
 EOF
 elif [ "${consensus}" = "istanbul" ]; then
     cat >> genesis.json <<EOF
+    "isQuorum": true,
     "istanbul": {
       "epoch": 30000,
       "policy": 0
@@ -278,6 +279,7 @@ elif [ "${consensus}" = "istanbul" ]; then
 EOF
 else # Raft
     cat >> genesis.json <<EOF
+    "isQuorum": true
   },
   "extraData": "0x",
   "mixhash": "0x00000000000000000000000000000000000000647572616c65787365646c6578"
