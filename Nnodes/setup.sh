@@ -249,6 +249,7 @@ cat >> genesis.json <<EOF
     "eip155Block": 1,
     "eip158Block": 1,
     "byzantiumBlock": 1,
+    "constantinopleBlock": 1,
 EOF
 
 if [ "${consensus}" = "clique" ]; then
