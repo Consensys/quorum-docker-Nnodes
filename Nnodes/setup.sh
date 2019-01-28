@@ -31,24 +31,24 @@ COLOR_WHITE='\e[1;37m';
 # One Docker container will be configured for each IP address in $ips
 
 # Port prefix
-rpc_start_port=22000
-node_start_port=25000
-raft_start_port=28000
+rpc_start_port=23000
+node_start_port=26000
+raft_start_port=29000
 
 # VIP Subnet
-subnet="172.13.0.0/16"
+subnet="172.14.0.0/16"
 
 # Total nodes to deploy
 total_nodes=5
 
 # Signer nodes for Clique and IBFT
-signer_nodes=7
+signer_nodes=4
 
 # Consensus engine ex. raft, clique, istanbul
-consensus=raft
+consensus=clique
 
 # Block period for Clique and IBFT
-block_period=1
+block_period=0
 
 # Docker image name
 image=quorum
@@ -144,6 +144,8 @@ nodekeys=""
 
 echo -e "${COLOR_WHITE}[2] Creating Enodes and static-nodes.json.${COLOR_RESET}"
 
+bootnode="\""
+
 echo "[" > static-nodes.json
 n=1
 for ip in ${ips[*]}
@@ -163,10 +165,13 @@ do
 
     # Add the enode to static-nodes.json
     echo '  "enode://'$enode'@'$ip':30303?raftport=50400"'$sep >> static-nodes.json
+    bootnode="${bootnode}enode:\\/\\/${enode}@${ip}:30303$sep"
     echo -e "  - ${COLOR_GREEN}Node #${n}${COLOR_RESET} with nodekey: ${COLOR_YELLOW}${enode:0:8}...${enode:120:8}${COLOR_RESET} configured. (IP: ${COLOR_BLUE}${ip}${COLOR_RESET})"
 
     let n++
 done
+
+bootnode="${bootnode}\""
 
 echo "]" >> static-nodes.json
 
@@ -344,7 +349,8 @@ do
             sed -i 's/full/full --mine --minerthreads 1 /g' $qd/start-node.sh
         fi
     fi
-
+    
+    sed -i "s/{bootnode}/--bootnodes ${bootnode}/g" $qd/start-node.sh
     let n++
 done
 rm -rf genesis.json static-nodes.json
@@ -372,7 +378,7 @@ do
         ipv4_address: '$ip'
     ports:
       - $((n+rpc_start_port)):8545
-      - $((n+node_start_port)):9000
+      - $((n+node_start_port)):30303
       - $((n+raft_start_port)):50400
     user: '$uid:$gid'
 EOF
