@@ -56,7 +56,7 @@ If you have Geth installed on the host machine you can do the following from the
 
 Otherwise, the following will achieve the same thing, attaching via the Geth instance in the container.  If you do this, you'll have to copy transaction scripts used below into the *qdata_N* directories manually.
 
-    docker exec -it Nnodes_node_1_1 geth attach /qdata/dd/geth.ipc
+    docker exec -it nnodes_node_1_1 geth attach /qdata/dd/geth.ipc
 
 ### Making transactions
 
