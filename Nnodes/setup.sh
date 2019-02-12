@@ -80,19 +80,19 @@ else
     echo -e "${COLOR_WHITE}Consensus engine not found: ${COLOR_RED}${consensus}${COLOR_WHITE}${COLOR_RESET}"
 fi
 
-if [[ $total_nodes < 2 ]]
+if [[ "$total_nodes" -lt "2" ]]
 then
     echo "ERROR: There must be more than one node."
     exit 1
 fi
 
-if [[ ! "${consensus}" = "raft" &&  $signer_nodes < 4 ]]
+if [[ ! "${consensus}" = "raft" &&  "$signer_nodes" -lt "4" ]]
 then
     echo "ERROR: There must be more than four signer nodes in IBFT and Clique consensus ."
     exit 1
 fi
 
-[[ $total_nodes < $signer_nodes ]] && total_nodes=$signer_nodes
+[[ "$total_nodes" -lt "$signer_nodes" ]] && total_nodes=$signer_nodes
 
 if [ -e docker-compose.yml ]; then
     echo -e "${COLOR_WHITE}[*] Performing cleanup. ${COLOR_RESET}"

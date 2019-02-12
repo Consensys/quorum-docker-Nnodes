@@ -65,7 +65,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir /.ethereum && \
     chown -R 1000:1000 /.ethereum && \
-    groupadd -g 1000 geth && useradd -u 1000 -g 1000 geth && \
+    groupadd -g 1000 geth && useradd -u 1000 -g 1000 -s /bin/bash geth && \
     mkdir /home/geth && chown 1000:1000 -R /home/geth
     
 
