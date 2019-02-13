@@ -61,13 +61,23 @@ This will set up as many Quorum nodes as IP addresses you supplied, each in a se
 
 ### Accessing the Geth console
 
-If you have Geth installed on the host machine you can do the following from the *Nnodes* directory to attach to Node 1's console.
+To enter Geth console, use:
+
+    ./cmd.sh console 1
+
+Or you have Geth installed on the host machine you can do the following from the *Nnodes* directory to attach to Node 1's console.
 
     geth attach qdata_1/dd/geth.ipc
 
-Otherwise, the following will achieve the same thing, attaching via the Geth instance in the container.  If you do this, you'll have to copy transaction scripts used below into the *qdata_N* directories manually.
+### View Geth logs
 
-    docker exec -it Nnodes_node_1_1 geth attach /qdata/dd/geth.ipc
+To show Geth log:
+
+    ./cmd.sh log 1
+
+To show all Geth node logs:
+
+    ./cmd.sh logs
 
 ### Making transactions
 
