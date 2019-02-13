@@ -2,6 +2,8 @@
 
 source ./.current_config
 
+echo ${master_enodes[2]}
+
 command=$1
 node=$2
 

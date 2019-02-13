@@ -30,6 +30,7 @@ COLOR_WHITE='\e[1;37m';
 
 # One Docker container will be configured for each IP address in $ips
 
+# Please edit config.sh for cluster configuration.
 source ./config.sh
 
 ########################################################################
@@ -117,7 +118,9 @@ nodekeys=""
 
 echo -e "${COLOR_WHITE}[2] Creating Enodes and static-nodes.json.${COLOR_RESET}"
 
-bootnode="\""
+bootnode="'"
+
+master_enodes="master_enodes=(\n"
 
 echo "[" > static-nodes.json
 n=1
@@ -135,18 +138,24 @@ do
     fi
 
     enode=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -nodekeyhex ${nkey} -writeaddress"`
-
+    
     # Add the enode to static-nodes.json
     echo '  "enode://'$enode'@'$ip':30303?raftport=50400"'$sep >> static-nodes.json
     bootnode="${bootnode}enode:\\/\\/${enode}@${ip}:30303$sep"
+
+    master_enodes="${master_enodes}${enode}\n"
+
     echo -e "  - ${COLOR_GREEN}Node #${n}${COLOR_RESET} with nodekey: ${COLOR_YELLOW}${enode:0:8}...${enode:120:8}${COLOR_RESET} configured. (IP: ${COLOR_BLUE}${ip}${COLOR_RESET})"
 
     let n++
 done
 
-bootnode="${bootnode}\""
+bootnode="${bootnode}'"
+master_enodes="$master_enodes)"
 
 echo "]" >> static-nodes.json
+
+echo -e "\n$master_enodes" >> .current_config
 
 #### Create accounts, keys and genesis.json file #######################
 
@@ -296,7 +305,7 @@ do
     cp static-nodes.json $qd/dd/static-nodes.json
 
     # Generate Quorum-related keys (used by Constellation)
-    docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=/qdata/keys/tm < /dev/null > /dev/null
+    docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=/qdata/keys/tm < /dev/null > /dev/null
     echo -e "  - ${COLOR_GREEN}Node #$n${COLOR_RESET} public key: ${COLOR_YELLOW}`cat $qd/keys/tm.pub`${COLOR_RESET}"
 
     cp templates/start-node.sh $qd/start-node.sh
@@ -329,7 +338,7 @@ do
  
     let n++
 done
-rm -rf genesis.json static-nodes.json
+rm -rf static-nodes.json
 
 
 #### Create the docker-compose file ####################################
