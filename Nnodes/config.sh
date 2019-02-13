@@ -3,9 +3,11 @@
 #### Configuration options #############################################
 
 # Port prefix
-rpc_start_port=23000
-node_start_port=26000
-raft_start_port=29000
+port_range=61000
+rpc_start_port=$((port_range+100))
+node_start_port=$((port_range+200))
+raft_start_port=$((port_range+300))
+constellation_start_port=$((port_range+400))
 
 # Default port number
 raft_port=50400
