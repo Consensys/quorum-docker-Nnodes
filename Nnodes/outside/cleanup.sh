@@ -1,7 +1,9 @@
 #!/bin/bash
 
-echo "  - Removing containers."
-docker-compose --log-level ERROR down 2>/dev/null
+if [[ -e config.sh ]]; then
+    source config.sh
+    rm -rf $node_name_prefix-$service 2>/dev/null
+fi
 
 echo "  - Removing old data."
 rm -rf qdata_[0-9] qdata_[0-9][0-9]

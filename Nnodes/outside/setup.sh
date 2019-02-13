@@ -32,7 +32,7 @@ source config.sh
 
 ########################################################################
 
-base_dir=$node_name_prefix-$service
+base_dir=${node_name_prefix}_${service}
 
 ip_prefix="`echo ${subnet} | cut -d / -f 1 | cut -d . -f 1-3`."
 
@@ -51,7 +51,7 @@ fi
 
 if [ -e $base_dir ]; then
     echo -e "${COLOR_WHITE}[*] Performing cleanup. ${COLOR_RESET}"
-    rm -rf $base_dir
+    ./cleanup.sh
 fi
 
 uid=`id -u`
@@ -185,9 +185,7 @@ do
     #Do fullsync and mining on clique signer
     chmod 755 $qd/start-node.sh
     if [ "${consensus}" = "clique" ]; then
-
         sed -i 's/--raft/--syncmode full/g' $qd/start-node.sh
-
     fi
     
     sed -i "s/{bootnode}/--bootnodes ${bootnode}/g" $qd/start-node.sh
@@ -209,7 +207,7 @@ EOF
 n=1
 for ip in ${ips[*]}
 do
-    qd=$base_dir/qdata_$n
+    qd=qdata_$n
 
     cat >> $base_dir/docker-compose.yml <<EOF
   ${consensus}_${service}_$n:
@@ -240,10 +238,13 @@ networks:
       - subnet: $subnet
 EOF
 
-cp ../cmd.sh $base_dir/
+cp ../cmd.sh $base_dir/cmd.sh
 cp ../cleanup.sh $base_dir/
 
 echo "service=$service" >> $base_dir/.current_config
 echo "consensus=$consensus" >> $base_dir/.current_config
+echo "total_nodes=$outside_nodes" >> $base_dir/.current_config
+
 
 echo -e "${COLOR_WHITE}[-] Finished.${COLOR_RESET}"
+echo -e "${COLOR_WHITE}[-] Please upload $base_dir directory to destination. ${COLOR_RESET}"
