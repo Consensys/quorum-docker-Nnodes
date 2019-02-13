@@ -126,6 +126,14 @@ echo "[" > static-nodes.json
 n=1
 for ip in ${ips[*]}
 do
+    
+    if [ "$use_host_net" = "true" ]; then
+        ip=$interface_ip
+        rpc_port=$((n+rpc_start_port))
+        raft_port=$((n+raft_start_port))
+        rlp_port=$((n+node_start_port))
+    fi
+
     qd=qdata_$n
     sep=`[[ $n < $total_nodes ]] && echo ","`
 
@@ -140,12 +148,12 @@ do
     enode=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -nodekeyhex ${nkey} -writeaddress"`
     
     # Add the enode to static-nodes.json
-    echo '  "enode://'$enode'@'$ip':30303?raftport=50400"'$sep >> static-nodes.json
-    bootnode="${bootnode}enode:\\/\\/${enode}@${ip}:30303$sep"
+    echo '  "enode://'$enode'@'$ip':'$rlp_port'?raftport='$raft_port'"'$sep >> static-nodes.json
+    bootnode="${bootnode}enode:\\/\\/${enode}@${ip}:${rlp_port}$sep"
 
     master_enodes="${master_enodes}${enode}\n"
 
-    echo -e "  - ${COLOR_GREEN}Node #${n}${COLOR_RESET} with nodekey: ${COLOR_YELLOW}${enode:0:8}...${enode:120:8}${COLOR_RESET} configured. (IP: ${COLOR_BLUE}${ip}${COLOR_RESET})"
+    echo -e "  - ${COLOR_GREEN}Node #${n}${COLOR_RESET} with nodekey: ${COLOR_YELLOW}${enode:0:8}...${enode:120:8}${COLOR_RESET} configured."
 
     let n++
 done
@@ -282,7 +290,11 @@ n=1
 for ip in ${ips[*]}
 do
     sep=`[[ $ip != ${ips[0]} ]] && echo ","`
-    nodelist=${nodelist}${sep}'"http://'${ip}':9000/"'
+    if [ "$use_host_net" = "true" ]; then
+        ip=$interface_ip
+        constellation_port=$((constellation_start_port+n))
+    fi
+    nodelist=${nodelist}${sep}'"http://'${ip}':'${constellation_port}'/"'
     let n++
 done
 
@@ -296,10 +308,25 @@ for ip in ${ips[*]}
 do
     qd=qdata_$n
 
-    cat templates/tm.conf \
-        | sed s/_NODEIP_/${ips[$((n-1))]}/g \
-        | sed s%_NODELIST_%$nodelist%g \
-              > $qd/tm.conf
+    if [ "$use_host_net" = "true" ]; then
+        ip=$interface_ip
+        constellation_port=$((constellation_start_port+n))
+
+        cat templates/tm.conf \
+            | sed s/_NODEIP_/${ip}/g \
+            | sed s%_NODELIST_%$nodelist%g \
+            | sed s%9000%$constellation_port%g \
+                  > $qd/tm.conf
+        rpc_port=$((n+rpc_start_port))
+        raft_port=$((n+raft_start_port))
+        rlp_port=$((n+node_start_port))
+
+    else
+        cat templates/tm.conf \
+            | sed s/_NODEIP_/${ips[$((n-1))]}/g \
+            | sed s%_NODELIST_%$nodelist%g \
+                  > $qd/tm.conf
+    fi
 
     cp genesis.json $qd/genesis.json
     cp static-nodes.json $qd/dd/static-nodes.json
@@ -308,10 +335,15 @@ do
     docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=/qdata/keys/tm < /dev/null > /dev/null
     echo -e "  - ${COLOR_GREEN}Node #$n${COLOR_RESET} public key: ${COLOR_YELLOW}`cat $qd/keys/tm.pub`${COLOR_RESET}"
 
-    cp templates/start-node.sh $qd/start-node.sh
+    cat templates/start-node.sh \ 
+        | sed s/{raft_port}/${raft_port}/g \
+        | sed s/{rpc_port}/${rpc_port}/g \
+        | sed s/{rlp_port}/${rlp_port}/g \
+            > $qd/start-node.sh
 
     #Do fullsync and mining on clique signer
     chmod 755 $qd/start-node.sh
+    
     if [ "${consensus}" = "clique" ]; then
 
         sed -i 's/--raft/--syncmode full/g' $qd/start-node.sh
