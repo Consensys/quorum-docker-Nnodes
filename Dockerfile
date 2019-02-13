@@ -80,4 +80,6 @@ COPY --from=builder \
         /usr/local/bin/bootnode \
         /usr/local/bin/
 
+ENV SHELL=/bin/bash
+
 CMD ["/qdata/start-node.sh"]

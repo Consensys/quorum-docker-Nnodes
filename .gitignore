@@ -1,4 +1,5 @@
 .#*
+Nnodes/.current_config
 Nnodes/qdata_*
 Nnodes/contract_pri.js
 Nnodes/contract_pub.js

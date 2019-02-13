@@ -30,34 +30,7 @@ COLOR_WHITE='\e[1;37m';
 
 # One Docker container will be configured for each IP address in $ips
 
-# Port prefix
-rpc_start_port=23000
-node_start_port=26000
-raft_start_port=29000
-
-# VIP Subnet
-subnet="172.14.0.0/16"
-
-# Total nodes to deploy
-total_nodes=5
-
-# Signer nodes for Clique and IBFT
-signer_nodes=4
-
-# Consensus engine ex. raft, clique, istanbul
-consensus=clique
-
-# Block period for Clique and IBFT
-block_period=0
-
-# Docker image name
-image=quorum
-
-# Service name for docker-compose.yml
-service=n1
-
-# Send some ether for pre-defined accounts
-alloc_ether=true
+source ./config.sh
 
 ########################################################################
 
@@ -92,8 +65,6 @@ then
     exit 1
 fi
 
-[[ "$total_nodes" -lt "$signer_nodes" ]] && total_nodes=$signer_nodes
-
 if [ -e docker-compose.yml ]; then
     echo -e "${COLOR_WHITE}[*] Performing cleanup. ${COLOR_RESET}"
     ./cleanup.sh
@@ -107,6 +78,8 @@ pwd=`pwd`
 
 # Force cleanup on next setup
 touch docker-compose.yml
+
+cp config.sh .current_config
 
 i=0
 n=0
@@ -154,14 +127,14 @@ do
     sep=`[[ $n < $total_nodes ]] && echo ","`
 
     # Generate the node's Enode and key
-    nkey=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress; cat /qdata/dd/nodekey"`
+    nkey=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress; cat /qdata/dd/nodekey"`
 
     # IBFT use nodekey to authorize nodes.
     if [ "$consensus" = "istanbul" ]; then
         nodekeys="${nodekeys}${nkey}${sep}"
     fi
 
-    enode=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -nodekeyhex ${nkey} -writeaddress"`
+    enode=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -nodekeyhex ${nkey} -writeaddress"`
 
     # Add the enode to static-nodes.json
     echo '  "enode://'$enode'@'$ip':30303?raftport=50400"'$sep >> static-nodes.json
@@ -189,7 +162,7 @@ EOF
 
 # Create extraData from nodekeys
 if [ "$consensus" = "istanbul" ]; then
-    genesis=`docker run $image sh -c "istanbul reinit --nodekey ${nodekeys} --quorum"`
+    genesis=`docker run --rm $image sh -c "istanbul reinit --nodekey ${nodekeys} --quorum"`
     istanbul_extra=`echo $genesis | grep -Po '"extraData": "0x[0-9a-f]+",' | cut -d \" -f 4`
     validators=($(echo $genesis | grep -Po '"[0-9a-f]{40}":' | cut -c 2-41))
     for addr in ${validators[*]}; do
@@ -210,7 +183,7 @@ do
 
     # Generate an Ether account for the node
     touch $qd/passwords.txt
-    account=`docker run -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new 2>/dev/null | cut -c 11-50`
+    account=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new 2>/dev/null | cut -c 11-50`
     printf "  - Account ${COLOR_YELLOW}0x${account}${COLOR_RESET} created on ${COLOR_GREEN}Node #${n}${COLOR_RESET}."
 
     sep=`[[ $n < $total_nodes ]] && echo ","`
@@ -351,6 +324,9 @@ do
     fi
     
     sed -i "s/{bootnode}/--bootnodes ${bootnode}/g" $qd/start-node.sh
+
+    sed -i "s/{node_name}/Geth-${node_name_prefix}-$n/g" $qd/start-node.sh
+ 
     let n++
 done
 rm -rf genesis.json static-nodes.json
@@ -398,8 +374,9 @@ networks:
 EOF
 
 # Start Cluster
-echo -e "${COLOR_WHITE}[5] Starting Quorum cluster.${COLOR_RESET}"
-docker-compose up -d 2>/dev/null
+if [[ "$auto_start_containers" = "true" ]]; then
+    echo -e "${COLOR_WHITE}[5] Starting Quorum cluster.${COLOR_RESET}"
+    docker-compose up -d 2>/dev/null
+fi
 
 echo -e "${COLOR_WHITE}[-] Finished.${COLOR_RESET}"
-
