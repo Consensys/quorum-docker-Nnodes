@@ -118,7 +118,7 @@ nodekeys=""
 
 echo -e "${COLOR_WHITE}[2] Creating Enodes and static-nodes.json.${COLOR_RESET}"
 
-bootnode="'"
+bootnode=""
 
 master_enodes="master_enodes=(\n"
 
@@ -158,7 +158,6 @@ do
     let n++
 done
 
-bootnode="${bootnode}'"
 master_enodes="$master_enodes)"
 
 echo "]" >> static-nodes.json
@@ -309,11 +308,10 @@ do
     qd=qdata_$n
 
     if [ "$use_host_net" = "true" ]; then
-        ip=$interface_ip
         constellation_port=$((constellation_start_port+n))
 
         cat templates/tm.conf \
-            | sed s/_NODEIP_/${ip}/g \
+            | sed s/_NODEIP_/$interface_ip/g \
             | sed s%_NODELIST_%$nodelist%g \
             | sed s%9000%$constellation_port%g \
                   > $qd/tm.conf
@@ -335,20 +333,20 @@ do
     docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=/qdata/keys/tm < /dev/null > /dev/null
     echo -e "  - ${COLOR_GREEN}Node #$n${COLOR_RESET} public key: ${COLOR_YELLOW}`cat $qd/keys/tm.pub`${COLOR_RESET}"
 
-    cat templates/start-node.sh \ 
+    cat templates/start-node.sh \
         | sed s/{raft_port}/${raft_port}/g \
         | sed s/{rpc_port}/${rpc_port}/g \
         | sed s/{rlp_port}/${rlp_port}/g \
             > $qd/start-node.sh
-
-    #Do fullsync and mining on clique signer
-    chmod 755 $qd/start-node.sh
     
+    chmod 755 $qd/start-node.sh
+
+    #Do fullsync and mining on clique signer  
     if [ "${consensus}" = "clique" ]; then
 
-        sed -i 's/--raft/--syncmode full/g' $qd/start-node.sh
+        sed -i 's/--raft /--syncmode full /g' $qd/start-node.sh
 
-	if [[ " ${signer_ips[@]} " =~ " $ip " ]]; then
+	    if [[ " ${signer_ips[@]} " =~ " $ip " ]]; then
             sed -i 's/full/full --mine/g' $qd/start-node.sh    
         fi
 
@@ -359,7 +357,7 @@ do
 
 	sed -i "s/--raft/--istanbul.blockperiod ${block_period} --syncmode full/g" $qd/start-node.sh
 
-	if [[ " ${signer_ips[@]} " =~ " $ip " ]]; then
+	    if [[ " ${signer_ips[@]} " =~ " $ip " ]]; then
             sed -i 's/full/full --mine --minerthreads 1 /g' $qd/start-node.sh
         fi
     fi
@@ -367,16 +365,17 @@ do
     sed -i "s/{bootnode}/--bootnodes ${bootnode}/g" $qd/start-node.sh
 
     sed -i "s/{node_name}/Geth-${node_name_prefix}-$n/g" $qd/start-node.sh
- 
+
     let n++
 done
+
 rm -rf static-nodes.json
 
 
 #### Create the docker-compose file ####################################
 
 cat > docker-compose.yml <<EOF
-version: '2'
+version: '3'
 services:
 EOF
 
@@ -390,6 +389,14 @@ do
     image: $image
     volumes:
       - './$qd:/qdata'
+    user: '$uid:$gid'
+EOF
+    if [ "$use_host_net" = "true" ]; then
+        cat >> docker-compose.yml <<EOF
+    network_mode: "host"
+EOF
+    else
+        cat >> docker-compose.yml <<EOF
     networks:
       quorum_${consensus}_${service}_net:
         ipv4_address: '$ip'
@@ -397,13 +404,13 @@ do
       - $((n+rpc_start_port)):8545
       - $((n+node_start_port)):30303
       - $((n+raft_start_port)):50400
-    user: '$uid:$gid'
 EOF
-
+    fi
     let n++
 done
 
-cat >> docker-compose.yml <<EOF
+if [ ! "$use_host_net" = "true" ]; then
+    cat >> docker-compose.yml <<EOF
 
 networks:
   quorum_${consensus}_${service}_net:
@@ -413,6 +420,8 @@ networks:
       config:
       - subnet: $subnet
 EOF
+
+fi
 
 # Start Cluster
 if [[ "$auto_start_containers" = "true" ]]; then

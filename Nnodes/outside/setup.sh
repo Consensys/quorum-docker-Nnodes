@@ -32,6 +32,10 @@ source config.sh
 
 ########################################################################
 
+
+[[ ! "$1" = "" ]]; node_name_prefix=$1
+[[ ! "$2" = "" ]]; service=$2
+
 base_dir=${node_name_prefix}_${service}
 
 ip_prefix="`echo ${subnet} | cut -d / -f 1 | cut -d . -f 1-3`."
@@ -41,7 +45,7 @@ signer_ips=()
 
 n=0
 
-echo -e "${COLOR_WHITE}[*] Deploy ${COLOR_YELLOW}Outside${COLOR_WHITE} ${COLOR_BLUE}Quorum${COLOR_WHITE} Nodes ${COLOR_RESET}"
+echo -e "${COLOR_WHITE}[*] Generate ${COLOR_YELLOW}Outside${COLOR_WHITE} ${COLOR_BLUE}Quorum${COLOR_WHITE} Nodes for ${base_dir}. ${COLOR_RESET}"
 
 if [[ "$outside_nodes" -lt "1" ]]
 then
@@ -51,7 +55,7 @@ fi
 
 if [ -e $base_dir ]; then
     echo -e "${COLOR_WHITE}[*] Performing cleanup. ${COLOR_RESET}"
-    ./cleanup.sh
+    rm -rf $base_dir
 fi
 
 uid=`id -u`
@@ -95,6 +99,14 @@ echo "[" > static-nodes.json
 n=1
 for ip in ${ips[*]}
 do
+
+    if [ "$use_host_net" = "true" ]; then
+        ip="127.0.0.1"
+        rpc_port=$((n+rpc_start_port))
+        raft_port=$((n+raft_start_port))
+        rlp_port=$((n+node_start_port))
+    fi
+
     qd=$base_dir/qdata_$n
     sep=","
 
@@ -104,11 +116,11 @@ do
     enode=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -nodekeyhex ${nkey} -writeaddress"`
 
     # Add the enode to static-nodes.json
-    echo '  "enode://'$enode'@'$ip':30303?raftport=50400",' >> static-nodes.json
+    echo '  "enode://'$enode'@'$ip':'$rlp_port'?raftport='$raft_port'",' >> static-nodes.json
 
-    bootnode="${bootnode}enode:\\/\\/${enode}@${ip}:30303$sep"
+    bootnode="${bootnode}enode:\\/\\/${enode}@${ip}:${rlp_port}$sep"
 
-    echo -e "  - ${COLOR_GREEN}Node #${n}${COLOR_RESET} with nodekey: ${COLOR_YELLOW}${enode:0:8}...${enode:120:8}${COLOR_RESET} configured. (IP: ${COLOR_BLUE}${ip}${COLOR_RESET})"
+    echo -e "  - ${COLOR_GREEN}Node #${n}${COLOR_RESET} with nodekey: ${COLOR_YELLOW}${enode:0:8}...${enode:120:8}${COLOR_RESET} configured."
 
     let n++
 done
@@ -120,6 +132,7 @@ for enode in ${master_enodes[*]}; do
     echo '  "enode://'${master_enodes[$((n-1))]}'@'${master_ip}':'$((n+master_node_start_port))'"'$sep >> static-nodes.json
     bootnode="${bootnode}enode:\\/\\/${master_enodes[$((n-1))]}@${master_ip}:$((n+master_node_start_port))$sep"
     let n++
+
 done
 
 bootnode="${bootnode}'"
@@ -154,9 +167,24 @@ nodelist=
 n=1
 for ip in ${ips[*]}
 do
-    sep=`[[ $ip != ${ips[0]} ]] && echo ","`
-    nodelist=${nodelist}${sep}'"http://'${ip}':9000/"'
+
+    if [ "$use_host_net" = "true" ]; then
+        ip="127.0.0.1"
+        constellation_port=$((constellation_start_port+n))
+    fi
+
+    sep=","
+    nodelist=${nodelist}'"http://'${ip}':'$constellation_port'/"'${sep}''
     let n++
+done
+
+n=1
+for enode in ${master_enodes[*]}; do
+
+    sep=`[[ $n < $total_nodes ]] && echo ","`
+    nodelist=${nodelist}'"http://'${master_ip}':'$((n+master_constellation_start_port))'/"'${sep}''
+    let n++
+
 done
 
 #### Complete each node's configuration ################################
@@ -168,10 +196,26 @@ for ip in ${ips[*]}
 do
     qd=$base_dir/qdata_$n
 
-    cat ../templates/tm.conf \
-        | sed s/_NODEIP_/${ips[$((n-1))]}/g \
-        | sed s%_NODELIST_%$nodelist%g \
-              > $qd/tm.conf
+    if [ "$use_host_net" = "true" ]; then
+        ip="127.0.0.1"
+        constellation_port=$((constellation_start_port+n))
+
+        cat ../templates/tm.conf \
+            | sed s/_NODEIP_/${ip}/g \
+            | sed s%_NODELIST_%$nodelist%g \
+            | sed s%9000%$constellation_port%g \
+                  > $qd/tm.conf
+
+        rpc_port=$((n+rpc_start_port))
+        raft_port=$((n+raft_start_port))
+        rlp_port=$((n+node_start_port))
+
+    else
+        cat ../templates/tm.conf \
+            | sed s/_NODEIP_/${ips[$((n-1))]}/g \
+            | sed s%_NODELIST_%$nodelist%g \
+                  > $qd/tm.conf
+    fi
 
     cp ../genesis.json $qd/genesis.json
     cp static-nodes.json $qd/dd/static-nodes.json
@@ -180,12 +224,17 @@ do
     docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=/qdata/keys/tm < /dev/null > /dev/null
     echo -e "  - ${COLOR_GREEN}Node #$n${COLOR_RESET} public key: ${COLOR_YELLOW}`cat $qd/keys/tm.pub`${COLOR_RESET}"
 
-    cp ../templates/start-node.sh $qd/start-node.sh
+    cat ../templates/start-node.sh \
+        | sed s/{raft_port}/${raft_port}/g \
+        | sed s/{rpc_port}/${rpc_port}/g \
+        | sed s/{rlp_port}/${rlp_port}/g \
+            > $qd/start-node.sh
+
+    chmod 755 $qd/start-node.sh
 
     #Do fullsync and mining on clique signer
-    chmod 755 $qd/start-node.sh
     if [ "${consensus}" = "clique" ]; then
-        sed -i 's/--raft/--syncmode full/g' $qd/start-node.sh
+        sed -i 's/--raft /--syncmode full /g' $qd/start-node.sh
     fi
     
     sed -i "s/{bootnode}/--bootnodes ${bootnode}/g" $qd/start-node.sh
@@ -200,7 +249,7 @@ rm -rf genesis.json static-nodes.json
 #### Create the docker-compose file ####################################
 
 cat > $base_dir/docker-compose.yml <<EOF
-version: '2'
+version: '3'
 services:
 EOF
 
@@ -214,6 +263,14 @@ do
     image: $image
     volumes:
       - './$qd:/qdata'
+    user: '$uid:$gid'
+EOF
+    if [ "$use_host_net" = "true" ]; then
+        cat >> $base_dir/docker-compose.yml <<EOF
+    network_mode: "host"
+EOF
+    else
+        cat >> $base_dir/docker-compose.yml <<EOF
     networks:
       quorum_${consensus}_${service}_net:
         ipv4_address: '$ip'
@@ -221,13 +278,13 @@ do
       - $((n+rpc_start_port)):8545
       - $((n+node_start_port)):30303
       - $((n+raft_start_port)):50400
-    user: '$uid:$gid'
 EOF
-
+    fi
     let n++
 done
 
-cat >> $base_dir/docker-compose.yml <<EOF
+if [ ! "$use_host_net" = "true" ]; then
+    cat >> $base_dir/docker-compose.yml <<EOF
 
 networks:
   quorum_${consensus}_${service}_net:
@@ -238,6 +295,7 @@ networks:
       - subnet: $subnet
 EOF
 
+fi
 cp ../cmd.sh $base_dir/cmd.sh
 cp ../cleanup.sh $base_dir/
 

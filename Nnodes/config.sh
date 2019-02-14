@@ -4,6 +4,7 @@
 
 # Port prefix
 port_range=61000
+
 rpc_start_port=$((port_range+100))
 node_start_port=$((port_range+200))
 raft_start_port=$((port_range+300))
