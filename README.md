@@ -31,13 +31,16 @@ I've got the size of the final image down to ~~391MB~~ 308MB from over 890MB. It
 
 ## Running
 
-Change to the *Nnodes/* directory. Edit the `ips` variable in *setup.sh* to list two or more IP addresses on the Docker network that will host nodes:
+Change to the *Nnodes/* directory. Edit the `ips` variable in *config.sh* to list two or more IP addresses on the Docker network that will host nodes:
 
     # Total nodes to deploy
     total_nodes=5
 
     # Signer nodes for Clique and IBFT
     signer_nodes=7
+    
+    # Use docker host network for RLP connection.
+    use_host_net=false    
     
 The IP addresses are needed for Constellation to work. Now run,
 

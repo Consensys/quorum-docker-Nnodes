@@ -24,6 +24,8 @@ Refer to the *setup.sh* file itself for the full code.
 
 Options are simple and self-explanatory. The *docker-compose.yml* file will create a Docker network for the nodes as per the `subnet` variable here. If you want to run more nodes, change `total_nodes` to how many you want.
 
+    `in config.sh`
+
     #### Configuration options #############################################
 
     # Total nodes to deploy
@@ -34,6 +36,9 @@ Options are simple and self-explanatory. The *docker-compose.yml* file will crea
 
     # Docker image name
     image=quorum
+
+    # Use docker host network for RLP connection.
+    use_host_net=false    
 
 The docker image is used during set-up to run Geth, Bootnode and Constellation to generate various things. These executables don't need to be installed on the host machine.
 
