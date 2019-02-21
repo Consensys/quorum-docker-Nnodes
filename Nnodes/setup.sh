@@ -404,6 +404,7 @@ EOF
       - $((n+rpc_start_port)):8545
       - $((n+node_start_port)):30303
       - $((n+raft_start_port)):50400
+      - $((n+constellation_start_port)):9000
 EOF
     fi
     let n++

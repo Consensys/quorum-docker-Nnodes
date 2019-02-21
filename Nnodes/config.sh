@@ -10,6 +10,12 @@ node_start_port=$((port_range+200))
 raft_start_port=$((port_range+300))
 constellation_start_port=$((port_range+400))
 
+# Old version
+#rpc_start_port=22000
+#node_start_port=25000
+#raft_start_port=28000
+#constellation_start_port=32000
+
 # Default port number
 raft_port=50400
 constellation_port=9000
@@ -20,7 +26,7 @@ rpc_port=8545
 subnet="172.14.0.0/16"
 
 # Use docker host network for RLP connection.
-use_host_net=true
+use_host_net=false
 
 # Interface IP for RLP listening when using docker host network
 interface_ip="192.168.66.82"
