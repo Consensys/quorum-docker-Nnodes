@@ -22,11 +22,14 @@ constellation_port=9000
 rlp_port=30303
 rpc_port=8545
 
+#Disable constellation node
+use_constellation=false
+
 # VIP Subnet
 subnet="172.14.0.0/16"
 
 # Use docker host network for RLP connection.
-use_host_net=false
+use_host_net=true
 
 # Interface IP for RLP listening when using docker host network
 interface_ip="192.168.66.82"

@@ -307,36 +307,41 @@ for ip in ${ips[*]}
 do
     qd=qdata_$n
 
-    if [ "$use_host_net" = "true" ]; then
-        constellation_port=$((constellation_start_port+n))
+    if [[ "$use_constellation" != "true" ]]; then
+        if [ "$use_host_net" = "true" ]; then
+            constellation_port=$((constellation_start_port+n))
 
-        cat templates/tm.conf \
-            | sed s/_NODEIP_/$interface_ip/g \
-            | sed s%_NODELIST_%$nodelist%g \
-            | sed s%9000%$constellation_port%g \
-                  > $qd/tm.conf
-        rpc_port=$((n+rpc_start_port))
-        raft_port=$((n+raft_start_port))
-        rlp_port=$((n+node_start_port))
+            cat templates/tm.conf \
+                | sed s/_NODEIP_/$interface_ip/g \
+                | sed s%_NODELIST_%$nodelist%g \
+                | sed s%9000%$constellation_port%g \
+                      > $qd/tm.conf
+            rpc_port=$((n+rpc_start_port))
+            raft_port=$((n+raft_start_port))
+            rlp_port=$((n+node_start_port))
 
-    else
-        cat templates/tm.conf \
-            | sed s/_NODEIP_/${ips[$((n-1))]}/g \
-            | sed s%_NODELIST_%$nodelist%g \
-                  > $qd/tm.conf
+        else
+            cat templates/tm.conf \
+                | sed s/_NODEIP_/${ips[$((n-1))]}/g \
+                | sed s%_NODELIST_%$nodelist%g \
+                      > $qd/tm.conf
+        fi
+
+        # Generate Quorum-related keys (used by Constellation)
+        docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=/qdata/keys/tm < /dev/null > /dev/null
+        echo -e "  - ${COLOR_GREEN}Node #$n${COLOR_RESET} public key: ${COLOR_YELLOW}`cat $qd/keys/tm.pub`${COLOR_RESET}"
+
     fi
 
     cp genesis.json $qd/genesis.json
     cp static-nodes.json $qd/dd/static-nodes.json
 
-    # Generate Quorum-related keys (used by Constellation)
-    docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=/qdata/keys/tm < /dev/null > /dev/null
-    echo -e "  - ${COLOR_GREEN}Node #$n${COLOR_RESET} public key: ${COLOR_YELLOW}`cat $qd/keys/tm.pub`${COLOR_RESET}"
-
     cat templates/start-node.sh \
         | sed s/{raft_port}/${raft_port}/g \
         | sed s/{rpc_port}/${rpc_port}/g \
         | sed s/{rlp_port}/${rlp_port}/g \
+        | sed "s/{node_name}/${node_name_prefix}-$n/g" \
+        | sed "s/{bootnode}/--bootnodes ${bootnode}/g" \
             > $qd/start-node.sh
     
     chmod 755 $qd/start-node.sh
@@ -355,16 +360,17 @@ do
         #Block period must > 1 in IBFT
         [[ $block_period < 1 ]] && block_period=1
 
-	sed -i "s/--raft/--istanbul.blockperiod ${block_period} --syncmode full/g" $qd/start-node.sh
+	    sed -i "s/--raft/--istanbul.blockperiod ${block_period} --syncmode full/g" $qd/start-node.sh
 
 	    if [[ " ${signer_ips[@]} " =~ " $ip " ]]; then
             sed -i 's/full/full --mine --minerthreads 1 /g' $qd/start-node.sh
         fi
     fi
-    
-    sed -i "s/{bootnode}/--bootnodes ${bootnode}/g" $qd/start-node.sh
 
-    sed -i "s/{node_name}/Geth-${node_name_prefix}-$n/g" $qd/start-node.sh
+    if [[ "$use_constellation" != "true" ]]; then
+        sed -i 's/nohup \/usr\/local\/bin\/constellation-node/#nohup \/usr\/local\/bin\/constellation-node/g' $qd/start-node.sh
+        sed -i 's/PRIVATE_CONFIG=$TMCONF//g' $qd/start-node.sh
+    fi
 
     let n++
 done
