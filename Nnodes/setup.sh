@@ -202,7 +202,7 @@ do
     account=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new 2>/dev/null | cut -c 11-50`
     printf "  - Account ${COLOR_YELLOW}0x${account}${COLOR_RESET} created on ${COLOR_GREEN}Node #${n}${COLOR_RESET}."
 
-    sep=`[[ $n < $total_nodes ]] && echo ","`
+    sep=`[[ $n -lt $total_nodes ]] && echo ","`
 
     if [[ " ${signer_ips[@]} " =~ " $ip " ]]; then
         if [ "${consensus}" = "clique" ]; then
@@ -360,7 +360,7 @@ do
         #Block period must > 1 in IBFT
         [[ $block_period < 1 ]] && block_period=1
 
-	    sed -i "s/--raft/--istanbul.blockperiod ${block_period} --syncmode full/g" $qd/start-node.sh
+	    sed -i "s/--raft/--istanbul.blockperiod ${block_period} --syncmode full /g" $qd/start-node.sh
 
 	    if [[ " ${signer_ips[@]} " =~ " $ip " ]]; then
             sed -i 's/full/full --mine --minerthreads 1 /g' $qd/start-node.sh
