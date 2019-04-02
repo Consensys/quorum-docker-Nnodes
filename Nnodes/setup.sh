@@ -138,14 +138,14 @@ do
     sep=`[[ $n -lt $total_nodes ]] && echo ","`
 
     # Generate the node's Enode and key
-    nkey=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress; cat /qdata/dd/nodekey"`
+    nkey=`docker run --net=host --rm -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress; cat /qdata/dd/nodekey"`
 
     # IBFT use nodekey to authorize nodes.
     if [ "$consensus" = "istanbul" ]; then
         nodekeys="${nodekeys}${nkey}${sep}"
     fi
 
-    enode=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -nodekeyhex ${nkey} -writeaddress"`
+    enode=`docker run --net=host --rm -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -nodekeyhex ${nkey} -writeaddress"`
     
     # Add the enode to static-nodes.json
     echo '  "enode://'$enode'@'$ip':'$rlp_port'?raftport='$raft_port'"'$sep >> static-nodes.json
@@ -178,7 +178,7 @@ EOF
 
 # Create extraData from nodekeys
 if [ "$consensus" = "istanbul" ]; then
-    genesis=`docker run --rm $image sh -c "istanbul reinit --nodekey ${nodekeys} --quorum"`
+    genesis=`docker run --net=host --rm $image sh -c "istanbul reinit --nodekey ${nodekeys} --quorum"`
     istanbul_extra=`echo $genesis | grep -Po '"extraData": "0x[0-9a-f]+",' | cut -d \" -f 4`
     validators=($(echo $genesis | grep -Po '"[0-9a-f]{40}":' | cut -c 2-41))
     for addr in ${validators[*]}; do
@@ -199,7 +199,7 @@ do
 
     # Generate an Ether account for the node
     touch $qd/passwords.txt
-    account=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new 2>/dev/null | cut -c 11-50`
+    account=`docker run --net=host --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/geth --datadir=/qdata/dd --password /qdata/passwords.txt account new 2>/dev/null | cut -c 11-50`
     printf "  - Account ${COLOR_YELLOW}0x${account}${COLOR_RESET} created on ${COLOR_GREEN}Node #${n}${COLOR_RESET}."
 
     sep=`[[ $n -lt $total_nodes ]] && echo ","`
@@ -307,8 +307,13 @@ for ip in ${ips[*]}
 do
     qd=qdata_$n
 
-    if [[ "$use_constellation" != "true" ]]; then
-        if [ "$use_host_net" = "true" ]; then
+
+    if [ "$use_host_net" = "true" ]; then
+        rpc_port=$((n+rpc_start_port))
+        raft_port=$((n+raft_start_port))
+        rlp_port=$((n+node_start_port))
+
+        if [[ "$use_constellation" == "true" ]]; then
             constellation_port=$((constellation_start_port+n))
 
             cat templates/tm.conf \
@@ -316,21 +321,20 @@ do
                 | sed s%_NODELIST_%$nodelist%g \
                 | sed s%9000%$constellation_port%g \
                       > $qd/tm.conf
-            rpc_port=$((n+rpc_start_port))
-            raft_port=$((n+raft_start_port))
-            rlp_port=$((n+node_start_port))
-
-        else
+        fi
+    else
+        if [[ "$use_constellation" == "true" ]]; then
             cat templates/tm.conf \
                 | sed s/_NODEIP_/${ips[$((n-1))]}/g \
                 | sed s%_NODELIST_%$nodelist%g \
                       > $qd/tm.conf
         fi
+    fi
 
+    if [[ "$use_constellation" == "true" ]]; then
         # Generate Quorum-related keys (used by Constellation)
-        docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=/qdata/keys/tm < /dev/null > /dev/null
-        echo -e "  - ${COLOR_GREEN}Node #$n${COLOR_RESET} public key: ${COLOR_YELLOW}`cat $qd/keys/tm.pub`${COLOR_RESET}"
-
+        docker run --rm --net=host -u $uid:$gid -v $pwd/$qd:/qdata $image /usr/local/bin/constellation-node --generatekeys=/qdata/keys/tm < /dev/null > /dev/null
+        echo -e "  - ${COLOR_GREEN}Node #$n${COLOR_RESET} public key for constellation: ${COLOR_YELLOW}`cat $qd/keys/tm.pub`${COLOR_RESET}"
     fi
 
     cp genesis.json $qd/genesis.json
