@@ -135,7 +135,7 @@ do
     fi
 
     qd=qdata_$n
-    sep=`[[ $n < $total_nodes ]] && echo ","`
+    sep=`[[ $n -lt $total_nodes ]] && echo ","`
 
     # Generate the node's Enode and key
     nkey=`docker run --rm -u $uid:$gid -v $pwd/$qd:/qdata $image sh -c "/usr/local/bin/bootnode -genkey /qdata/dd/nodekey -writeaddress; cat /qdata/dd/nodekey"`
@@ -393,6 +393,7 @@ do
     cat >> docker-compose.yml <<EOF
   ${consensus}_${service}_$n:
     image: $image
+    restart: 'always'
     volumes:
       - './$qd:/qdata'
     user: '$uid:$gid'
