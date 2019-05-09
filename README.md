@@ -1,7 +1,7 @@
 # quorum-docker-Nnodes
 
 ## Modified by me
-  * Add support for Quorum 2.2.1.
+  * Add support for Quorum 2.2.3.
   * Add support for Clique consensus engine
   * Add support for Istanbul BFT consensus engine
 
@@ -13,7 +13,7 @@ This is simply a learning exercise for configuring Quorum networks. Probably bes
 
 In progress:
 
-  * Investigate adding Quorum network manager.
+  * Add multi-nodes deployment.
   * Further work on Docker image size.
   * Tidy the whole thing up.
 
