@@ -33,7 +33,7 @@ RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
     rm -f $GOREL
 
 RUN mkdir istanbul && cd istanbul && \
-    GOPATH=/work/istanbul go get github.com/jpmorganchase/istanbul-tools/cmd/istanbul && \
+    GOPATH=/work/istanbul go get -u github.com/jpmorganchase/istanbul-tools/cmd/istanbul && \
     cp bin/istanbul /usr/local/bin && \
     cd .. && rm -rf istanbul
 
