@@ -1,9 +1,9 @@
 # quorum-docker-Nnodes
 
 ## Modified by me
-  * Add support for Quorum 2.2.3.
-  * Add support for Clique consensus engine
-  * Add support for Istanbul BFT consensus engine
+  * Add support for Quorum 2.2.4.
+  * Add support for Clique consensus engine.
+  * Add support for Istanbul BFT consensus engine.
 
 ## Intro
 
@@ -33,6 +33,11 @@ I've got the size of the final image down to ~~391MB~~ 308MB from over 890MB. It
 
 Change to the *Nnodes/* directory. Edit the `ips` variable in *config.sh* to list two or more IP addresses on the Docker network that will host nodes:
 
+    # change to Nnodes
+    cd Nnodes
+    
+    vi config.sh
+    
     # Total nodes to deploy
     total_nodes=5
 
@@ -40,7 +45,10 @@ Change to the *Nnodes/* directory. Edit the `ips` variable in *config.sh* to lis
     signer_nodes=7
     
     # Use docker host network for RLP connection.
-    use_host_net=false    
+    use_host_net=false
+    
+    # auto start
+    auto_start_containers=true
     
 The IP addresses are needed for Constellation to work. Now run,
 
