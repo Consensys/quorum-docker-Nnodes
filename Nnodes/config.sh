@@ -29,7 +29,7 @@ use_constellation=false
 subnet="172.14.0.0/16"
 
 # Use docker host network for RLP connection.
-use_host_net=true
+use_host_net=false
 
 # Interface IP for RLP listening when using docker host network
 interface_ip="192.168.66.82"
@@ -56,7 +56,7 @@ service=n1
 alloc_ether=true
 
 node_name_prefix=master
-auto_start_containers=false
+auto_start_containers=true
 
 ########################################################################
 
