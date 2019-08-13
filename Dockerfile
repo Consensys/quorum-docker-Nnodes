@@ -1,7 +1,7 @@
 FROM ubuntu:16.04 as builder
 
 ARG CONSTELLATION_VERSION=0.3.5
-ARG QUORUM_VERSION=2.2.3
+ARG QUORUM_VERSION=2.2.4
 
 WORKDIR /work
 
@@ -24,7 +24,7 @@ RUN wget -q https://github.com/jpmorganchase/constellation/releases/download/v0.
     chmod 0755 /usr/local/bin/constellation-node && \
     rm -rf constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.gz constellation-node
 
-ENV GOREL go1.10.7.linux-amd64.tar.gz
+ENV GOREL go1.12.7.linux-amd64.tar.gz
 ENV PATH $PATH:/usr/local/go/bin
 
 RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
@@ -32,10 +32,17 @@ RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
     mv go /usr/local/go && \
     rm -f $GOREL
 
-RUN mkdir istanbul && cd istanbul && \
-    GOPATH=/work/istanbul go get -u github.com/jpmorganchase/istanbul-tools/cmd/istanbul && \
-    cp bin/istanbul /usr/local/bin && \
+#RUN mkdir istanbul && cd istanbul && \
+#    GO111MODULE=on GOPATH=/work/istanbul go get -u github.com/jpmorganchase/istanbul-tools/cmd/istanbul && \
+#    cp bin/istanbul /usr/local/bin && \
+#    cd .. && rm -rf istanbul
+
+RUN git clone https://github.com/jpmorganchase/istanbul-tools.git istanbul && \
+    cd istanbul && \
+    make && \
+    cp build/bin/istanbul /usr/local/bin/ && \
     cd .. && rm -rf istanbul
+    
 
 RUN git clone https://github.com/jpmorganchase/quorum.git && \
     cd quorum && \
