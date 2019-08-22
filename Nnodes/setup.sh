@@ -132,6 +132,7 @@ do
         rpc_port=$((n+rpc_start_port))
         raft_port=$((n+raft_start_port))
         rlp_port=$((n+node_start_port))
+	ws_port=$((n+node_ws_port))
     fi
 
     qd=qdata_$n
@@ -224,6 +225,12 @@ EOF
 
     let n++
 done
+cat >> genesis.json <<EOF
+    ,"0xfe0Cc669D3e95b031Cf5bb59a27D365716FA9AcF":{
+        "balance": "1000000000000000000000"
+    }
+
+EOF
 
 cat >> genesis.json <<EOF
   },
@@ -312,6 +319,7 @@ do
         rpc_port=$((n+rpc_start_port))
         raft_port=$((n+raft_start_port))
         rlp_port=$((n+node_start_port))
+	ws_port=$((n+ws_start_port))
 
         if [[ "$use_constellation" == "true" ]]; then
             constellation_port=$((constellation_start_port+n))
@@ -344,6 +352,7 @@ do
         | sed s/{raft_port}/${raft_port}/g \
         | sed s/{rpc_port}/${rpc_port}/g \
         | sed s/{rlp_port}/${rlp_port}/g \
+	| sed s/{ws_port}/${ws_port}/g \
         | sed "s/{node_name}/${node_name_prefix}-$n/g" \
         | sed "s/{bootnode}/--bootnodes ${bootnode}/g" \
             > $qd/start-node.sh
@@ -415,6 +424,7 @@ EOF
       - $((n+rpc_start_port)):8545
       - $((n+node_start_port)):30303
       - $((n+raft_start_port)):50400
+      - $((n+ws_start_port)):8546
       - $((n+constellation_start_port)):9000
 EOF
     fi
