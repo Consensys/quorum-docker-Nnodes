@@ -49,7 +49,7 @@ consensus=clique
 block_period=0
 
 # Docker image name
-image=quorum:224
+image=quorum
 
 # Service name for docker-compose.yml
 service=n1
