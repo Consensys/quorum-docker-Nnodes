@@ -1,7 +1,7 @@
 # quorum-docker-Nnodes
 
 ## Modified by me
-  * Add support for Quorum 2.2.5.
+  * Add support for Quorum 2.3.0.
   * Add support for Clique consensus engine.
   * Add support for Istanbul BFT consensus engine.
 
