@@ -31,19 +31,20 @@ use_constellation=false
 subnet="172.14.0.0/16"
 
 # Use docker host network for RLP connection.
-use_host_net=false
+use_host_net=true
+
 
 # Interface IP for RLP listening when using docker host network
 interface_ip="172.16.2.169"
 
 # Total nodes to deploy
-total_nodes=5
+total_nodes=4
 
 # Signer nodes for Clique and IBFT
 signer_nodes=4
 
 # Consensus engine ex. raft, clique, istanbul
-consensus=clique
+consensus=raft
 
 # Block period for Clique and IBFT
 block_period=0
