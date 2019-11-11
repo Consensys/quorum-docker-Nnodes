@@ -225,12 +225,6 @@ EOF
 
     let n++
 done
-cat >> genesis.json <<EOF
-    ,"0xfe0Cc669D3e95b031Cf5bb59a27D365716FA9AcF":{
-        "balance": "1000000000000000000000"
-    }
-
-EOF
 
 cat >> genesis.json <<EOF
   },

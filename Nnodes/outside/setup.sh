@@ -28,6 +28,11 @@ COLOR_WHITE='\e[1;37m';
 
 #### Configuration options #############################################
 
+if [ ! -e '../.current_config' ]; then
+    echo "Create a master cluster first."
+    exit 1
+fi
+
 source utils.sh
 source config.sh
 
