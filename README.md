@@ -4,6 +4,7 @@
   * Add support for Quorum 2.3.0.
   * Add support for Clique consensus engine.
   * Add support for Istanbul BFT consensus engine.
+  * Add support for Multi-Cluster.
 
 ## Intro
 
