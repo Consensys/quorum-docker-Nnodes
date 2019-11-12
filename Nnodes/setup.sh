@@ -403,6 +403,7 @@ do
     restart: 'always'
     volumes:
       - './$qd:/qdata'
+      - '/etc/localtime:/etc/localtime'
     user: '$uid:$gid'
 EOF
     if [ "$use_host_net" = "true" ]; then
