@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "  - Removing containers."
-docker-compose --log-level ERROR down 2>/dev/null
+docker-compose  down
 
 echo "  - Removing old data."
 rm -rf qdata_[0-9] qdata_[0-9][0-9]

@@ -255,6 +255,8 @@ cat >> genesis.json <<EOF
       }
     ],
     "txnSizeLimit": 128,
+    "maxCodeSize": 128,
+    "maxCodeSizeChangeBlock": 0,
 EOF
 
 if [ "${consensus}" = "clique" ]; then
