@@ -239,12 +239,22 @@ EOF
 cat >> genesis.json <<EOF
   "config":{
     "chainId": 10,
-    "eip150Block": 1,
+    "eip150Block": 0,
     "eip150Hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-    "eip155Block": 1,
-    "eip158Block": 1,
-    "byzantiumBlock": 1,
-    "constantinopleBlock": 1,
+    "eip155Block": 0,
+    "eip158Block": 0,
+    "byzantiumBlock": 0,
+    "constantinopleBlock": 0,
+    "petersburgBlock": 0,
+    "istanbulBlock": 0,
+    "homesteadBlock": 0,
+    "maxCodeSizeConfig" : [
+      {
+        "block" : 0,
+        "size" : 128
+      }
+    ],
+    "txnSizeLimit": 128,
 EOF
 
 if [ "${consensus}" = "clique" ]; then
@@ -375,8 +385,7 @@ do
     fi
 
     if [[ "$use_constellation" != "true" ]]; then
-        sed -i 's/nohup \/usr\/local\/bin\/constellation-node/#nohup \/usr\/local\/bin\/constellation-node/g' $qd/start-node.sh
-        sed -i 's/PRIVATE_CONFIG=$TMCONF//g' $qd/start-node.sh
+        sed -i 's/TMCONF=\/qdata\/tm.conf/TMCONF=ignore/g' $qd/start-node.sh
     fi
 
     let n++

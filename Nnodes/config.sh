@@ -35,7 +35,7 @@ use_host_net=true
 
 
 # Interface IP for RLP listening when using docker host network
-interface_ip="172.16.2.169"
+interface_ip="172.16.1.122"
 
 # Total nodes to deploy
 total_nodes=4

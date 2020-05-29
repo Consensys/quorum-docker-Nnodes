@@ -1,7 +1,7 @@
-FROM ubuntu:16.04 as builder
+FROM ubuntu:18.04 as builder
 
 ARG CONSTELLATION_VERSION=0.3.5
-ARG QUORUM_VERSION=2.3.0
+ARG QUORUM_VERSION=2.5.0
 
 WORKDIR /work
 
@@ -15,7 +15,6 @@ RUN apt-get update && \
             sysvbanner \
             unzip \
             wget \
-            wrk \
             zlib1g-dev
 
 RUN wget -q https://github.com/jpmorganchase/constellation/releases/download/v0.3.5-build.1/constellation-0.3.5-ubuntu1604.tar.gz && \
@@ -55,7 +54,7 @@ RUN git clone https://github.com/jpmorganchase/quorum.git && \
 
 ### Create the runtime image, leaving most of the cruft behind (hopefully...)
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # Install add-apt-repository
 RUN apt-get update && \
@@ -77,8 +76,8 @@ RUN apt-get update && \
     
 
 # Temporary useful tools
-#RUN apt-get update && \
-#        apt-get install -y iputils-ping net-tools vim
+RUN apt-get update && \
+        apt-get install -y iputils-ping net-tools vim
 
 COPY --from=builder \
         /usr/local/bin/constellation-node \
