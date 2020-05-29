@@ -50,7 +50,7 @@ consensus=raft
 block_period=0
 
 # Docker image name
-image=quorum:2.5.0
+image=quorum
 
 # Service name for docker-compose.yml
 service=n1
