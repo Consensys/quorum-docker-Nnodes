@@ -1,6 +1,8 @@
 .#*
+Nnodes/.current_config
 Nnodes/qdata_*
 Nnodes/contract_pri.js
 Nnodes/contract_pub.js
 Nnodes/docker-compose.yml
 Nnodes/static-nodes.json
+Nnodes/genesis.json

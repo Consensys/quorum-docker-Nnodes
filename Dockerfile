@@ -1,4 +1,7 @@
-FROM ubuntu:16.04 as builder
+FROM ubuntu:18.04 as builder
+
+ARG CONSTELLATION_VERSION=0.3.5
+ARG QUORUM_VERSION=2.5.0
 
 WORKDIR /work
 
@@ -12,18 +15,15 @@ RUN apt-get update && \
             sysvbanner \
             unzip \
             wget \
-            wrk \
             zlib1g-dev
 
-RUN wget -q https://github.com/jpmorganchase/constellation/releases/download/v0.0.1-alpha/ubuntu1604.zip && \
-    unzip ubuntu1604.zip && \
-    cp ubuntu1604/constellation-node /usr/local/bin && \
+RUN wget -q https://github.com/jpmorganchase/constellation/releases/download/v0.3.5-build.1/constellation-0.3.5-ubuntu1604.tar.gz && \
+    tar -xvf constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.gz && \
+    cp constellation-node /usr/local/bin && \
     chmod 0755 /usr/local/bin/constellation-node && \
-    cp ubuntu1604/constellation-enclave-keygen /usr/local/bin/ && \
-    chmod 0755 /usr/local/bin/constellation-enclave-keygen && \
-    rm -rf ubuntu1604.zip ubuntu1604
+    rm -rf constellation-$CONSTELLATION_VERSION-ubuntu1604.tar.gz constellation-node
 
-ENV GOREL go1.7.3.linux-amd64.tar.gz
+ENV GOREL go1.12.7.linux-amd64.tar.gz
 ENV PATH $PATH:/usr/local/go/bin
 
 RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
@@ -31,9 +31,21 @@ RUN wget -q https://storage.googleapis.com/golang/$GOREL && \
     mv go /usr/local/go && \
     rm -f $GOREL
 
+#RUN mkdir istanbul && cd istanbul && \
+#    GO111MODULE=on GOPATH=/work/istanbul go get -u github.com/jpmorganchase/istanbul-tools/cmd/istanbul && \
+#    cp bin/istanbul /usr/local/bin && \
+#    cd .. && rm -rf istanbul
+
+RUN git clone https://github.com/jpmorganchase/istanbul-tools.git istanbul && \
+    cd istanbul && \
+    make && \
+    cp build/bin/istanbul /usr/local/bin/ && \
+    cd .. && rm -rf istanbul
+    
+
 RUN git clone https://github.com/jpmorganchase/quorum.git && \
     cd quorum && \
-    git checkout tags/v1.2.0 && \
+    git checkout v$QUORUM_VERSION && \
     make all && \
     cp build/bin/geth /usr/local/bin && \
     cp build/bin/bootnode /usr/local/bin && \
@@ -42,7 +54,7 @@ RUN git clone https://github.com/jpmorganchase/quorum.git && \
 
 ### Create the runtime image, leaving most of the cruft behind (hopefully...)
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # Install add-apt-repository
 RUN apt-get update && \
@@ -51,20 +63,29 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         libdb-dev \
+        libleveldb-dev \
         libsodium-dev \
+        zlib1g-dev\
         libtinfo-dev \
         solc && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir /.ethereum && \
+    chown -R 1000:1000 /.ethereum && \
+    groupadd -g 1000 geth && useradd -u 1000 -g 1000 -s /bin/bash geth && \
+    mkdir /home/geth && chown 1000:1000 -R /home/geth
+    
 
 # Temporary useful tools
-#RUN apt-get update && \
-#        apt-get install -y iputils-ping net-tools vim
+RUN apt-get update && \
+        apt-get install -y iputils-ping net-tools vim
 
 COPY --from=builder \
         /usr/local/bin/constellation-node \
-        /usr/local/bin/constellation-enclave-keygen \
+        /usr/local/bin/istanbul \
         /usr/local/bin/geth \
         /usr/local/bin/bootnode \
-    /usr/local/bin/
+        /usr/local/bin/
+
+ENV SHELL=/bin/bash
 
 CMD ["/qdata/start-node.sh"]

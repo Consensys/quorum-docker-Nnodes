@@ -1,13 +1,20 @@
 # quorum-docker-Nnodes
 
+## Modified by me
+  * Add support for Quorum 2.5.0.
+  * Add support for Clique consensus engine.
+  * Add support for Istanbul BFT consensus engine.
+  * Add support for Multi-Cluster.
+
+## Intro
+
 Run a bunch of Quorum nodes, each in a separate Docker container.
 
 This is simply a learning exercise for configuring Quorum networks. Probably best not used in a production environment.
 
 In progress:
 
-  * ~~Remove the need to have Geth/Bootnode/Constellation installed on the host for the set-up process: use the Docker image instead, which already contains them.~~
-  * Investigate adding Quorum network manager.
+  * Add multi-nodes deployment.
   * Further work on Docker image size.
   * Tidy the whole thing up.
 
@@ -25,14 +32,30 @@ I've got the size of the final image down to ~~391MB~~ 308MB from over 890MB. It
 
 ## Running
 
-Change to the *Nnodes/* directory. Edit the `ips` variable in *setup.sh* to list two or more IP addresses on the Docker network that will host nodes:
+Change to the *Nnodes/* directory. Edit the `ips` variable in *config.sh* to list two or more IP addresses on the Docker network that will host nodes:
 
-    ips=("172.13.0.2" "172.13.0.3" "172.13.0.4")
+    # change to Nnodes
+    cd Nnodes
+    
+    vi config.sh
+    
+    # Total nodes to deploy
+    total_nodes=5
 
+    # Signer nodes for Clique and IBFT
+    signer_nodes=7
+    
+    # Use docker host network for RLP connection.
+    use_host_net=false
+    
+    # auto start
+    auto_start_containers=true
+    
 The IP addresses are needed for Constellation to work. Now run,
 
-    ./setup.sh
-    docker-compose up -d
+    ./setup.sh [raft]
+    ./setup.sh clique    # For Clique
+    ./setup.sh istanbul  # For IBFT
     
 This will set up as many Quorum nodes as IP addresses you supplied, each in a separate container, on a Docker network, all hopefully talking to each other.
 
@@ -50,13 +73,23 @@ This will set up as many Quorum nodes as IP addresses you supplied, each in a se
 
 ### Accessing the Geth console
 
-If you have Geth installed on the host machine you can do the following from the *Nnodes* directory to attach to Node 1's console.
+To enter Geth console, use:
+
+    ./cmd.sh console 1
+
+Or you have Geth installed on the host machine you can do the following from the *Nnodes* directory to attach to Node 1's console.
 
     geth attach qdata_1/dd/geth.ipc
 
-Otherwise, the following will achieve the same thing, attaching via the Geth instance in the container.  If you do this, you'll have to copy transaction scripts used below into the *qdata_N* directories manually.
+### View Geth logs
 
-    docker exec -it Nnodes_node_1_1 geth attach /qdata/dd/geth.ipc
+To show Geth log:
+
+    ./cmd.sh log 1
+
+To show all Geth node logs:
+
+    ./cmd.sh logs
 
 ### Making transactions
 
