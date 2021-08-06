@@ -1,17 +1,16 @@
-# quorum-docker-Nnodes
+# [DEPRECATED]-quorum-docker-Nnodes-
 
 Run a bunch of Quorum nodes, each in a separate Docker container.
 
 This is simply a learning exercise for configuring Quorum networks. Probably best not used in a production environment.
 
-In progress:
+## ⚠️ Deprecation Notice ⚠️
 
-  * ~~Remove the need to have Geth/Bootnode/Constellation installed on the host for the set-up process: use the Docker image instead, which already contains them.~~
-  * Investigate adding Quorum network manager.
-  * Further work on Docker image size.
-  * Tidy the whole thing up.
+quorum-docker-Nnodes is not actively supported.
 
-See the *README* in the *Nnodes* directory for details of the set up process.
+If interested in tooling to deploy Quorum networks using Docker, we encourage you to use [quorum-dev-quickstart](https://github.com/ConsenSys/quorum-dev-quickstart) which is actively maintained and that provides extended capabilities for Quorum network deployments. 
+
+If you have any questions or concerns, please reach out to the ConsenSys protocol engineering team on [#Discord](https://chat.consensys.net) or by [email](mailto:quorum@consensys.net).
 
 ## Building
 
